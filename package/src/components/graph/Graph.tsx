@@ -271,8 +271,8 @@ function runGraph(
 		.attr("viewBox", [-width / 2, -height / 2, width, height]);
 
 	const labels = svg.append("g").attr("class", "graph-labels");
-	const nl = svg.append("g");
-
+	const nl = svg.append("g")
+	
 	if (enableLegend) {
 		const legend: Record<string, string> = {
 			Current: activeNode,
@@ -400,7 +400,9 @@ function runGraph(
 			const bigFont = fontSize * (6/5);
 
 			// show text for self
-			d3.select<SVGElement, GraphNode>(labels.node()!)
+			d3.select<SVGElement, GraphNode>(
+				(this.parentNode as Element).parentNode!.parentNode! as SVGElement
+			)
 				.selectAll<SVGGElement, GraphNode>(".label")
 				.filter((d1) => d1.id === d.id)
 				.select<SVGGElement>("g")
@@ -413,7 +415,9 @@ function runGraph(
 				.attr(
 					"opacityOld",
 					d3
-						.select<SVGElement, GraphNode>(labels.node()!)
+						.select<SVGElement, GraphNode>(
+							(this.parentNode as Element).parentNode!.parentNode! as SVGElement
+						)
 						.selectAll<SVGGElement, GraphNode>(".label")
 						.filter((d1) => d1.id === d.id)
 						.select("g")
@@ -441,7 +445,7 @@ function runGraph(
 								currentUrl,
 								colors,
 								graphConfig,
-								labels: labelProps,
+								labels: labelProps
 						  })
 				)
 				.attr("stroke-width", 0)
@@ -452,7 +456,9 @@ function runGraph(
 
 			linkNodes.transition().duration(200).attr("stroke", linkInactive!);
 
-			d3.select<SVGGElement, GraphNode>(labels.node()!)
+			d3.select<SVGElement, GraphNode>(
+				(this.parentNode as Element).parentNode!.parentNode! as SVGElement
+			)
 				.selectAll<SVGGElement, GraphNode>(".label")
 				.filter((d1) => d1.id === d.id)
 				.select<SVGGElement>("g")
@@ -465,7 +471,9 @@ function runGraph(
 				.style(
 					"opacity",
 					d3
-						.select<SVGGElement, GraphNode>(labels.node()!)
+						.select<SVGElement, GraphNode>(
+							(this.parentNode as Element).parentNode!.parentNode! as SVGElement
+						)
 						.selectAll<SVGGElement, GraphNode>(".label")
 						.filter((d1) => d1.id === d.id)
 						.select("g")
