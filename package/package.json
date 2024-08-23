@@ -1,11 +1,11 @@
 {
-	"name": "package-name",
-	"version": "0.0.0",
-	"description": "TODO:",
+	"name": "astro-obsidian-graph",
+	"version": "0.0.1",
+	"description": "",
 	"author": {
-		"email": "TODO:",
-		"name": "TODO:",
-		"url": "TODO:"
+		"email": "i.am.the.tablet@proton.me",
+		"name": "The Tablet || GamerGirlandCo",
+		"url": "https://tablet.sh"
 	},
 	"license": "MIT",
 	"keywords": [
@@ -13,32 +13,88 @@
 		"astro-component",
 		"withastro",
 		"astro",
-		"TODO:"
+		"obsidian",
+		"pkm",
+		"graph",
+		"obsidian-graph"
 	],
-	"homepage": "TODO:",
+	"homepage": "https://github.com/GamerGirlandCo/astro-obsidian-graph",
 	"publishConfig": {
 		"access": "public"
 	},
 	"sideEffects": false,
 	"exports": {
-		".": {
+		"./integration": {
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
+		},
+		"./components": {
+			"types": "./dist/components/graph/index.d.ts",
+			"default": "./dist/components/graph/index.js"
+		},
+		"./endpoints/*.js": {
+			"types": "./dist/endpoints/*.d.ts",
+			"default": "./dist/endpoints/*.js"
+		},
+		"./endpoints/*": {
+			"types": "./dist/endpoints/*.d.ts",
+			"default": "./dist/endpoints/*.js"
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"dev": "tsup --watch",
-		"build": "tsup"
+		"build": "tsup",
+		"prepare": "ts-patch install"
 	},
 	"type": "module",
 	"peerDependencies": {
 		"astro": "^4.13.3"
 	},
 	"dependencies": {
-		"astro-integration-kit": "^0.16.0"
+		"@astrojs/mdx": "^3.1.3",
+		"@astrojs/react": "^3.6.2",
+		"@d3fc/d3fc-data-join": "^6.0.3",
+		"@d3fc/d3fc-label-layout": "^7.0.4",
+		"@pixi/react": "^7.1.2",
+		"@portaljs/remark-wiki-link": "^1.2.0",
+		"@types/d3": "^7.4.3",
+		"@types/d3-force": "^3.0.10",
+		"@types/react": "^18.3.3",
+		"astro-integration-kit": "^0.16.0",
+		"d3": "^7.9.0",
+		"d3-force": "^3.0.0",
+		"fast-glob": "^3.3.2",
+		"pixi-tween": "^0.2.0",
+		"pixi-viewport": "^5.1.0",
+		"pixi.js": "7.4.2",
+		"react": "^18.3.1",
+		"react-d3-library": "^1.1.8",
+		"remark-frontmatter": "^5.0.0",
+		"remark-mdx": "^3.0.1",
+		"remark-parse": "^11.0.0",
+		"ts-patch": "^3.2.1",
+		"tweedle.js": "^2.1.0",
+		"typescript": "^5.5.4",
+		"unified": "^11.0.5",
+		"unist-util-inspect": "^8.1.0",
+		"unist-util-visit-parents": "^6.0.1",
+		"vite": "^5.4.0"
 	},
 	"devDependencies": {
-		"tsup": "^8.2.4"
+		"@swc/cli": "latest",
+		"@swc/core": "latest",
+		"@types/node": "^20.14.15",
+		"esbuild-plugin-tsc": "^0.4.0",
+		"ts-transformer-keys": "^0.4.4",
+		"tsup": "^8.2.4",
+		"typescript-transform-paths": "^3.4.10"
+	},
+	"pnpm": {
+		"patchedDependencies": {
+			"@portaljs/remark-wiki-link@1.2.0": "patches/@portaljs__remark-wiki-link@1.2.0.patch"
+		}
 	}
 }

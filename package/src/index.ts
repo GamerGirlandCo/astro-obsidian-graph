@@ -1,3 +1,3 @@
-import { integration } from "./integration.js";
+import { obsidianGraph } from "./integration";
 
-export default integration;
+export default obsidianGraph;
