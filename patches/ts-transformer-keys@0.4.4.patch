@@ -1,0 +1,24 @@
+diff --git a/transformer.ts b/transformer.ts
+index b9640a67d7c8acb392f040f8bdbac5043e5c4b23..6206d114c99003035b1fe96c0d4eb80a3232061a 100644
+--- a/transformer.ts
++++ b/transformer.ts
+@@ -1,8 +1,8 @@
+ import ts from 'typescript';
+ import path from 'path';
+ 
+-const createArrayExpression = ts.factory ? ts.factory.createArrayLiteralExpression : ts.createArrayLiteral;
+-const createStringLiteral = ts.factory ? ts.factory.createStringLiteral : ts.createLiteral;
++const createArrayExpression = ts.factory.createArrayLiteralExpression;
++const createStringLiteral = ts.factory.createStringLiteral;
+ 
+ export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
+   return (context: ts.TransformationContext) => (file: ts.SourceFile) => visitNodeAndChildren(file, program, context);
+@@ -27,7 +27,7 @@ function visitNode(node: ts.Node, program: ts.Program): ts.Node | undefined {
+   if (!node.typeArguments) {
+     return createArrayExpression([]);
+   }
+-  const type = typeChecker.getTypeFromTypeNode(node.typeArguments[0]);
++  const type = typeChecker.getTypeFromTypeNode(node.typeArguments[0]!);
+   const properties = typeChecker.getPropertiesOfType(type);
+   return createArrayExpression(properties.map(property => createStringLiteral(property.name)));
+ }
