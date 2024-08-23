@@ -1,8 +1,21 @@
-import { getEntry } from "astro:content";
 import { suburl } from "client-utils";
 import { useState, useEffect } from "react";
 import type { FullLinkIndex } from "types";
 import type { GraphLink, GraphNode, Props } from "./types";
+import { getEntry as getEntryServer } from "astro:content";
+
+async function getEntry({
+	slug,
+	collection,
+}: Parameters<typeof getEntryServer>[0]) {
+	try {
+		const raw = await fetch(`/api/entries/${collection}/${slug}.json`);
+		const json = await raw.json();
+		return json;
+	} catch (e: any) {
+		return null;
+	}
+}
 
 export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 	const [links, setLinks] = useState<GraphLink[]>([]);
@@ -11,11 +24,12 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 		console.log("EFFECT");
 		(async () => {
 			const { links: indexLinks, index } = (await (
-				await fetch("/links")
+				await fetch("/api/links.json")
 			).json()) as FullLinkIndex;
-			console.log(suburl(props.currentUrl), indexLinks, index);
+			// console.log(suburl(props.currentUrl), indexLinks, index);
 
-			const node = suburl(props.currentUrl);
+			let node = suburl(props.currentUrl);
+			if (node.endsWith("/")) node = node.substring(0, node.length - 1);
 			let workingSet: GraphNode[] = [];
 			if (node) {
 				const incoming = index.backlinks[node] || [];
@@ -37,7 +51,7 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 						id,
 						title: b.data.title,
 						isCurrent:
-							`/${b.collection}${id}` ===
+							id ===
 							(props.currentUrl.endsWith("/")
 								? props.currentUrl.substring(
 										0,
@@ -49,16 +63,20 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 						hover: false,
 					} as GraphNode;
 				};
-				const kop = (await (await fetch("/collections")).json()) as string[];
+				const kop = (await (
+					await fetch("/api/collections.json")
+				).json()) as string[];
 				let wtf = (
 					await Promise.all(
 						inter.flatMap(async (a) => {
 							let interArr = (
 								await Promise.all(
 									kop.flatMap(async (c) => {
+										if(!a.substring(1).startsWith(c)) return null;
+										let slug = a.substring(1).substring(c.length).substring(1);
 										const fin = await getEntry({
 											collection: c,
-											slug: a.substring(1).substring(c.length).substring(1),
+											slug,
 										});
 										return fin;
 									})
@@ -90,27 +108,25 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 							) **
 							(Math.random() * 2),
 					}));
-				let notIncluded = (await Promise.all(
-					[...new Set(ilinks.flatMap((a) => [a.target, a.source]))]
-						.filter((a) => !workingSet.some((b) => b.id === a))
-						.map(async (a) => {
-							for (const c of kop) {
-								const entry = await getEntry({
-									collection: c,
-									slug: a.substring(1).substring(c.length).substring(1),
-								});
-								if(!!entry) return mapper(entry);
-							}	
-							return null;
-						})
-				)).filter(a => !!a);
-				workingSet.push(...notIncluded);	
+				let notIncluded = (
+					await Promise.all(
+						[...new Set(ilinks.flatMap((a) => [a.target, a.source]))]
+							.filter((a) => !workingSet.some((b) => b.id === a))
+							.map(async (a) => {
+								for (const c of kop) {
+									const entry = await getEntry({
+										collection: c,
+										slug: a.substring(1).substring(c.length).substring(1),
+									});
+									if (!!entry) return mapper(entry);
+								}
+								return null;
+							})
+					)
+				).filter((a) => !!a);
+				workingSet.push(...notIncluded);
 				setNodes(workingSet);
 				setLinks(ilinks);
-				console.log(
-					"links",
-					links.map((a) => a.strength)
-				);
 			}
 		})();
 	}, [setNodes, setLinks, props]);
@@ -133,4 +149,30 @@ export function parseIdsFromLinks(links: GraphLink[]): string[] {
 			links.flatMap((link) => [link.source as string, link.target as string])
 		),
 	];
+}
+
+export function hexToRgb(hex: string): [number, number, number] {
+	if (hex.startsWith("#")) hex = hex.substring(1);
+	var bigint = parseInt(hex, 16);
+	var r = (bigint >> 16) & 255;
+	var g = (bigint >> 8) & 255;
+	var b = bigint & 255;
+
+	return [r, g, b];
+}
+
+export function rgbToHex(rgb: [number, number, number]) {
+	return rgb.reduce((pv, cv) => {
+		return `${pv}${Math.floor(cv).toString(16).padStart(2, "0")}`;
+	}, "#");
+}
+
+export function useScuffed<T>(promise: Promise<T>) {
+	const [res, setRes] = useState<T>();
+	useEffect(() => {
+		(async () => {
+			setRes(await promise);
+		})();
+	}, [setRes]);
+	return res;
 }
