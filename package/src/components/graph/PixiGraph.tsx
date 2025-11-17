@@ -1,4 +1,19 @@
-import type { AstroBuiltinProps } from "astro";
+import { Application, useApplication as useApp, useExtend, useTick } from "@pixi/react";
+import type { AstroBuiltinAttributes } from "astro";
+import * as d3 from "d3";
+import { type Simulation } from "d3";
+import { Viewport, ViewportWrapper } from "../ViewportShim";
+import {
+	Circle,
+	Rectangle,
+	Graphics as Gfx,
+	Container as PContainer,
+	RenderTexture,
+	type FederatedPointerEvent
+} from "pixi.js";
+import type { RefObject } from "react";
+import React, { createContext, forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Group, Interpolation, Tween } from "tweedle.js";
 import type {
 	ColorProps,
 	GraphLink,
@@ -6,31 +21,7 @@ import type {
 	GraphProps,
 	Props,
 } from "./types";
-import { Stage } from "@pixi/react";
-import React from "react";
-import {
-	Graphics as Gfx,
-	RenderTexture,
-	type FederatedPointerEvent,
-	Circle,
-	Container as PContainer,
-} from "pixi.js";
-import { useApp } from "@pixi/react";
-import { useState } from "react";
-import { useEffect } from "react";
-import { createContext } from "react";
-import type { Dispatch } from "react";
-import * as d3 from "d3";
-import { type Simulation } from "d3";
-import { useRef, useMemo, useCallback } from "react";
-import { Graphics } from "@pixi/react";
-import type { MutableRefObject } from "react";
 import { hexToRgb, rgbToHex, useParsedLinks } from "./utils";
-import { forwardRef } from "react";
-import { Group, Tween } from "tweedle.js";
-import { Container } from "@pixi/react";
-import { Interpolation } from "tweedle.js";
-
 function useGraphColor(d: string, props: Omit<Props, "rootDir">) {
 	const pathColors = props.pathColors;
 	for (const col in pathColors) {
@@ -42,7 +33,7 @@ function useGraphColor(d: string, props: Omit<Props, "rootDir">) {
 }
 
 const useNodeRadius = (d: GraphNode, links: GraphLink[]) => {
-	let multiplier = d.isCurrent ? 7 : 5.5;
+	let multiplier = d.isCurrent ? 7.5 : 5.5;
 	const numOut =
 		links.filter((a) => (a.source as GraphNode).id === d.id).length || 0;
 	const numIn =
@@ -55,7 +46,7 @@ function useSimulation({
 	graphConfig,
 	container,
 }: {
-	container: MutableRefObject<HTMLDivElement>;
+	container: RefObject<HTMLDivElement>;
 	nodes: GraphNode[];
 	links: GraphLink[];
 	graphConfig: Partial<GraphProps>;
@@ -77,8 +68,8 @@ function useSimulation({
 		.force(
 			"center",
 			d3.forceCenter(
-				(container.current?.clientWidth || 300) / 2,
-				(container.current?.clientHeight || 300) / 2
+				(container.current?.clientWidth ?? 300) / 2,
+				(container.current?.clientHeight ?? 300) / 2
 				/* container.current.clientWidth / 2,
 				container.current.clientHeight / 2 */
 			)
@@ -147,30 +138,21 @@ const PixiGraphLink = forwardRef<
 	]);
 	const draw = useCallback(
 		(g: Gfx) => {
-			const fillFn = () => {
-				if (!active) g.alpha = 0.67;
-				else g.alpha = 1;
-				g.beginFill();
+			const fillFn = (obj: [number, number, number]) => {
+				const color = rgbToHex(obj);
 
-				g.moveTo(source.x!, source.y!);
-				g.lineTo(target.x!, target.y!);
-				g.endFill();
+				g.clear().moveTo(source.x!, source.y!).lineTo(target.x!, target.y!).stroke({
+					width: 1.5,
+					color,
+					alpha: !active ? 0.67 : 1,
+				});
 			};
 
 			tween.onUpdate((obj) => {
-				g.clear();
-				const color = rgbToHex(obj);
-				g.lineStyle({ width: 1.5, color });
-				fillFn();
+				fillFn(obj);
 			});
 			tween.onComplete((_obj) => {
-				const color = rgbToHex(_obj);
-				g.clear();
-				g.lineStyle({
-					width: 1.5,
-					color,
-				});
-				fillFn();
+				fillFn(_obj);
 				setPlayed(true);
 			});
 			if (!played) tween.start();
@@ -190,17 +172,19 @@ const PixiGraphLink = forwardRef<
 	);
 	useEffect(() => {
 		return () => {
-			(ref as MutableRefObject<Gfx> | null)?.current?.clear();
-			(ref as MutableRefObject<Gfx> | null)?.current?.destroy({
+			(ref as RefObject<Gfx> | null)?.current?.clear();
+			(ref as RefObject<Gfx> | null)?.current?.destroy({
 				children: true,
 			});
 		};
 	}, []);
 	return useMemo(
-		() => <Graphics ref={ref} draw={draw} />,
+		() => <pixiGraphics ref={ref} draw={draw} />,
 		[active, link, draw, link.source, link.target, tween, played]
 	);
 });
+
+PixiGraphLink.displayName = "PixiGraphLink"
 
 function PixiGraphNode({
 	node,
@@ -213,7 +197,7 @@ function PixiGraphNode({
 	links: GraphLink[];
 	simulation: Simulation<GraphNode, GraphLink>;
 	graphProps: GraphContext;
-	parentRef: MutableRefObject<PContainer | null>;
+	parentRef: RefObject<PContainer | null>;
 }) {
 	const app = useApp();
 	const gref = useRef<Gfx>(null);
@@ -234,14 +218,19 @@ function PixiGraphNode({
 	};
 	simulation.on("tick.node", nodeTick);
 	const fillo = (gi: Gfx) => {
-		if (node.isCurrent) {
-			gi.lineStyle(3, props.colors.nodeStroke);
+		gi
+		/* .setStrokeStyle({
+					}) */
+			.circle(0, 0, useNodeRadius(node, links))
+			.fill(
+				node.isCurrent ? props.colors.activeNode : useGraphColor(node.id, props)
+			);
+		if(node.isCurrent) {
+			gi.stroke({
+				width: 3,
+				color: props.colors.nodeStroke!
+			})
 		}
-		gi.beginFill(
-			node.isCurrent ? props.colors.activeNode : useGraphColor(node.id, props)
-		);
-		gi.drawCircle(0, 0, useNodeRadius(node, links));
-		gi.endFill();
 	};
 	const move = useCallback(
 		function (this: Gfx, evt: FederatedPointerEvent) {
@@ -268,13 +257,19 @@ function PixiGraphNode({
 
 				tween.onUpdate((obj, _, _thing) => {
 					g?.clear();
-					g?.lineStyle(obj.width, props.colors.nodeStroke);
 					if (g) fillo(g);
+					g?.stroke({
+						width: obj.width,
+						color: props.colors.nodeStroke!
+					})
 				});
 				tween.onComplete(() => {
 					g?.clear();
-					g?.lineStyle(0, props.colors.nodeStroke);
 					if (g) fillo(g);
+					g?.stroke({
+						color: props.colors.nodeStroke!,
+						width: 0,
+					});
 				});
 				tween.start();
 			} else {
@@ -323,8 +318,6 @@ function PixiGraphNode({
 				})
 				.on("pointerover", function (this: Gfx) {
 					if (!draggedNode.current) {
-						if (g.geometry.graphicsData[0])
-							g.geometry.graphicsData[0].lineStyle.visible = true;
 						const tween = new Tween({ width: 0 }, Group.shared)
 							.from({ width: 0 })
 							.to({ width: 2 }, 250);
@@ -333,13 +326,19 @@ function PixiGraphNode({
 						node.hover = true;
 						tween.onUpdate((obj, _, _thing) => {
 							g.clear();
-							g.lineStyle(obj.width, props.colors.nodeStroke);
 							fillo(g);
+							g.stroke({
+								width: obj.width,
+								color: props.colors.nodeStroke!,
+							});
 						});
 						tween.onComplete(() => {
-							g.clear();
-							g.lineStyle(2, props.colors.nodeStroke);
+							g.clear()
 							fillo(g);
+							g.stroke({
+								width: 2,
+								color: props.colors.nodeStroke!,
+							})
 						});
 						tween.start();
 					}
@@ -382,7 +381,7 @@ function PixiGraphNode({
 	]);
 	return useMemo(
 		() => (
-			<Graphics
+			<pixiGraphics
 				ref={gref}
 				hitArea={ha}
 				eventMode="static"
@@ -406,11 +405,14 @@ function PixiGraphNode({
 	);
 }
 
-function InnerPixiGraph(props: GraphContext) {
+
+const InnerPixiGraph = memo(function (props: GraphContext) {
 	const [links, nodes] = useParsedLinks(props);
+	// const nodes: GraphNode[] = [];
+	// const links: GraphLink[] = []
 	const { graphConfig, container, linkGfx, colors, draggedNode } = props;
 
-	const app = useApp();
+	const { app } = useApp();
 	const [st, set] = useState(null);
 	const [linkEls, setLinkEls] = useState<React.ReactElement[]>([]);
 	const [nodeEls, setNodeEls] = useState<React.ReactElement[]>([]);
@@ -472,42 +474,57 @@ function InnerPixiGraph(props: GraphContext) {
 				container.current.clientHeight
 			);
 		return () => {
+			// removeEventListener("resize", resizeListener)
 			// app.destroy(true, { children: true });
 		};
 	}, []);
-	addEventListener("resize", () => {
-		if (container.current)
-			app.renderer.resize(
-				container.current.clientWidth,
-				container.current.clientHeight
-			);
-	});
-	return useMemo(
-		() => (
-			<>
-				<Container>{linkEls}</Container>
-				<Container eventMode="dynamic" hitArea={app.screen} ref={cRef}>
+
+	const viewportRef = useRef<ViewportWrapper | null>(null)
+	const cfgr = useCallback((c: ViewportWrapper) => {
+		console.log("config", c, c.boundsArea)
+		c.boundsArea = app.screen
+		c.drag({ mouseButtons: "right" }).pinch().wheel({
+			interrupt: true
+		});
+	}, [props, container.current]);
+
+	useEffect(() => {
+		if(viewportRef.current) {
+			console.log(viewportRef.current.getBounds(), viewportRef.current.hitArea)
+		}
+	}, [viewportRef])
+
+	// console.log("vpr", viewportRef)
+	// console.log(viewportRef.current?.getBounds(), viewportRef.current?.hitArea, app.screen)
+	return useMemo(() => (
+			<Viewport configure={cfgr} ref={viewportRef} disableOnContextMenu
+				worldHeight={document.body.clientHeight}
+				worldWidth={document.body.clientWidth}
+			>
+				<pixiContainer>{linkEls}</pixiContainer>
+				<pixiContainer eventMode="dynamic" hitArea={
+					viewportRef.current?.hitArea!
+				} ref={cRef}>
 					{nodeEls}
-				</Container>
-			</>
-		),
-		[nodes, links, simulation, props, linkEls]
-	);
-}
+				</pixiContainer>
+			</Viewport>),
+			[nodes, links, simulation, props, linkEls, nodeEls]
+		)
+})
 type Textures = {
 	hover: RenderTexture;
 	normal: RenderTexture;
 };
-type GraphContext = (Props & AstroBuiltinProps) & {
-	container: MutableRefObject<HTMLDivElement>;
+type GraphContext = (Props & AstroBuiltinAttributes) & {
+	container: RefObject<HTMLDivElement>;
 	linkGfx: Gfx;
-	dragging: MutableRefObject<boolean>;
-	draggedNode: MutableRefObject<{ node: GraphNode; gfx: Gfx } | null>;
+	dragging: RefObject<boolean>;
+	draggedNode: RefObject<{ node: GraphNode; gfx: Gfx } | null>;
 };
 
 const GRAPH_CONTEXT = createContext<GraphContext | null>(null);
 
-function OuterPixiGraph(props: Props & AstroBuiltinProps) {
+function OuterPixiGraph(props: Props & AstroBuiltinAttributes) {
 	const divRef = useRef<HTMLDivElement>(null);
 	const linkGraphics = new Gfx();
 	const dragging = useRef<boolean>(false);
@@ -518,42 +535,50 @@ function OuterPixiGraph(props: Props & AstroBuiltinProps) {
 			...props,
 			colors: Object.assign(
 				{
-					nodeStroke: "#000",
+					nodeStroke: "#000000",
 				},
-				props.colors
+				props.colors,
 			),
-			container: divRef as MutableRefObject<HTMLDivElement>,
+			container: divRef as RefObject<HTMLDivElement>,
 			linkGfx: linkGraphics,
 			draggedNode: currentDraggedNode,
 		}),
 		[props, linkGraphics]
 	);
+	const noopEvent = (e: Event) => {
+		e.preventDefault()
+	}
 	useEffect(() => {
+		divRef.current?.addEventListener("wheel", noopEvent)
+		return () => {
+			divRef.current?.removeEventListener("wheel", noopEvent)
+		}
+	}, [noopEvent, divRef])
+	useEffect(() => {
+
 		return () => linkGraphics.destroy();
 	}, []);
 	if (typeof window === "undefined") {
 		return <progress value={null as unknown as number} />;
 	}
+
 	return (
-		<div id="graph-container" ref={divRef}>
-			<GRAPH_CONTEXT.Provider value={context}>
-				<Stage
-					raf
-					height={300}
-					options={{
-						antialias: true,
-						resizeTo: document.body.querySelector("main")!,
-						backgroundAlpha: 0,
-					}}
-					color="transparent"
-				>
+		<div id="graph-container" ref={divRef} style={{overscrollBehavior: "contain"}} onWheel={(e) => e.preventDefault()}>
+			<Application
+				height={300}
+				antialias
+				backgroundAlpha={0}
+				resizeTo={divRef!}
+			>
+				<GRAPH_CONTEXT.Provider value={context}>
 					<InnerPixiGraph {...context} />
-				</Stage>
-			</GRAPH_CONTEXT.Provider>
+				</GRAPH_CONTEXT.Provider>
+			</Application>
 		</div>
 	);
 }
 
-export function PixiGraph(props: Props & AstroBuiltinProps) {
+export function PixiGraph(props: Props & AstroBuiltinAttributes) {
+	useExtend({Container: PContainer, Graphics: Gfx})
 	return <OuterPixiGraph {...props} />;
 }

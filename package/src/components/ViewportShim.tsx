@@ -11,11 +11,7 @@ export class ViewportWrapper extends BaseViewport {
   constructor(options: ViewportProps & { app: Application }) {
     const { app, configure, ...rest } = options;
     super({
-      ...rest,
-      // events is the only required argument to the constructor.
-      // This may be why extend() doesn't work propertly with pixi-viewport.
-      // other pixi elements have no required arguments to the constructor.
-      // hence we need to pass the app to the constructor.
+      ...rest, 
       events: app.renderer.events,
     });
 		configure?.(this);
@@ -24,16 +20,16 @@ export class ViewportWrapper extends BaseViewport {
 
 extend({ ViewportWrapper });
 
-const Viewport = function (props: PropsWithChildren<ViewportProps>) {
+const Viewport = forwardRef(function (props: PropsWithChildren<ViewportProps>, ref: ForwardedRef<ViewportWrapper>) {
   const { children, ...rest } = props;
   const { app } = useApplication();
   return (
     app?.renderer ? (
-      <pixiViewportWrapper app={app} {...rest}>
+      <pixiViewportWrapper ref={ref} app={app} {...rest}>
         {children}
       </pixiViewportWrapper>
     ): null
   );
-}
+})
 
 export { Viewport };
