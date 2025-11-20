@@ -2,14 +2,18 @@ import { suburl } from "client-utils";
 import { useState, useEffect } from "react";
 import type { FullLinkIndex } from "types";
 import type { GraphLink, GraphNode, Props } from "./types";
-import { getEntry as getEntryServer } from "astro:content";
 
 async function getEntry({
 	slug,
 	collection,
-}: Parameters<typeof getEntryServer>[0]) {
+	signal
+}: {
+		slug: string;
+		collection: string;
+		signal: AbortSignal
+}) {
 	try {
-		const raw = await fetch(`/api/entries/${collection}/${slug}.json`);
+		const raw = await fetch(`/api/entries/${collection}/${slug}.json`, {signal});
 		const json = await raw.json();
 		return json;
 	} catch (e: any) {
@@ -20,12 +24,15 @@ async function getEntry({
 export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 	const [links, setLinks] = useState<GraphLink[]>([]);
 	const [nodes, setNodes] = useState<GraphNode[]>([]);
+
 	useEffect(() => {
+		const controller = new AbortController();
+  	const signal = controller.signal;
 		console.log("EFFECT");
 		(async () => {
 			const { links: indexLinks, index } = (await (
-				await fetch("/api/links.json")
-			).json()) as FullLinkIndex;
+				await fetch("/api/links.json", {signal})
+				).json()) as FullLinkIndex;
 			// console.log(suburl(props.currentUrl), indexLinks, index);
 
 			let node = suburl(props.currentUrl);
@@ -51,21 +58,21 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 						id,
 						title: b.data.title,
 						isCurrent:
-							id ===
-							(props.currentUrl.endsWith("/")
-								? props.currentUrl.substring(
-										0,
-										props.currentUrl.lastIndexOf("/")
-								  )
-								: props.currentUrl),
+						id ===
+						(props.currentUrl.endsWith("/")
+							? props.currentUrl.substring(
+								0,
+								props.currentUrl.lastIndexOf("/")
+					  )
+							: props.currentUrl),
 						color: useGraphColor(b.id, props),
 						collection: b.collection,
 						hover: false,
 					} as GraphNode;
 				};
 				const kop = (await (
-					await fetch("/api/collections.json")
-				).json()) as string[];
+					await fetch("/api/collections.json", {signal})
+					).json()) as string[];
 				let wtf = (
 					await Promise.all(
 						inter.flatMap(async (a) => {
@@ -77,36 +84,37 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 										const fin = await getEntry({
 											collection: c,
 											slug,
+											signal
 										});
 										return fin;
 									})
 								)
-							).filter((b) => !!b);
+								).filter((b) => !!b);
 							return await Promise.all(interArr.flatMap(mapper));
 						})
 					)
-				).flat(4);
+					).flat(4);
 				console.log("wtf", wtf);
 				workingSet.push(...wtf);
 				console.log("nodes", workingSet);
 				/* workingSet = workingSet.filter((v, _, a) => {
-					console.log("fil", v);
-					return a.findIndex((b) => b.id === v.id) != -1;
+				console.log("fil", v);
+				return a.findIndex((b) => b.id === v.id) != -1;
 				}); */
 				const ilinks = indexLinks
 					.filter(
 						(l) =>
-							workingSet.some((m) => m.id === l.source) ||
-							workingSet.some((m) => m.id === l.target)
+						workingSet.some((m) => m.id === l.source) ||
+						workingSet.some((m) => m.id === l.target)
 					)
 					.map((e, _, a) => ({
 						...e,
 						strength:
-							Math.log1p(
-								workingSet.filter((m) => m.id === e.source || m.id === e.target)
-									.length / a.length
-							) **
-							(Math.random() * 2),
+						Math.log1p(
+							workingSet.filter((m) => m.id === e.source || m.id === e.target)
+								.length / a.length
+						) **
+						(Math.random() * 2),
 					}));
 				let notIncluded = (
 					await Promise.all(
@@ -117,18 +125,22 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 									const entry = await getEntry({
 										collection: c,
 										slug: a.substring(1).substring(c.length).substring(1),
+										signal
 									});
 									if (!!entry) return mapper(entry);
 								}
 								return null;
 							})
-					)
-				).filter((a) => !!a);
+					)).filter((a) => !!a);
 				workingSet.push(...notIncluded);
+
 				setNodes(workingSet);
 				setLinks(ilinks);
 			}
 		})();
+		return () => {
+			controller.abort();
+		}
 	}, [setNodes, setLinks, props]);
 	return [links, nodes];
 }

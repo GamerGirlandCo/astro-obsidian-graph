@@ -2,7 +2,7 @@ import type { SimulationNodeDatum, SimulationLinkDatum } from "d3-force";
 import type { Sprite } from "pixi.js";
 import type { CSSProperties, ComponentProps } from "react";
 import type { Graphics } from "pixi.js";
-import { Graphics as Gfx } from "@pixi/react";
+
 export interface GraphProps {
 	enableZoom: boolean;
 	repelForce?: number;
@@ -16,6 +16,7 @@ export interface ColorProps {
 	nodeHover: string;
 	nodeStroke: string;
 	labelBg: string;
+	label: string;
 	labelBorder: string;
 }
 
@@ -63,7 +64,6 @@ export interface GraphLink
 	extends SimulationLinkDatum<GraphNode>,
 		BaseGraphLink {}
 
-export type Draw = NonNullable<ComponentProps<typeof Gfx>["draw"]>;
 
 export interface Rect {
 	height: number;
