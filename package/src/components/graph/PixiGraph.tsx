@@ -130,6 +130,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 			[nodes, links, simulation, props, linkEls, nodeEls, outerTick, zoom, setHoveredNode]
 		)
 })
+InnerPixiGraph.displayName = "InnerPixiGraph";
 
 
 const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
@@ -187,6 +188,7 @@ const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
 		</div>
 	);
 })
+OuterPixiGraph.displayName = "OuterPixiGraph";
 
 export function PixiGraph(props: Props & AstroBuiltinAttributes) {
 	useExtend({Container: PContainer, Graphics: Gfx, ViewportWrapper, Text, HTMLText, HtmlText: HTMLText})
