@@ -29,8 +29,8 @@ export const PixiGraphLink = forwardRef<
 	const elRef = useRef<Graphics>(null);
 	const playedRef = useRef(false);
 	let active = useMemo(
-		() => source.hover || target.hover,
-		[source, target, source.hover, target.hover, hoveredNode]
+		() => source.id == hoveredNode || target.id == hoveredNode,
+		[source, target, source.id, target.id, hoveredNode]
 	);
 	const color = useMemo(() => {
 

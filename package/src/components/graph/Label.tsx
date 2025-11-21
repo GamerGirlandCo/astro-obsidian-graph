@@ -93,7 +93,7 @@ export const NodeLabel = forwardRef(function ({node, hover, setHover, offset}: {
 				alpha: hover ? 1 : 0.5,
 				duration: 0.3
 			})
-	}, [node.hover]);
+	}, [hover]);
 
 	// useEffect(() => {
 	// 	if(parentRef.current) {

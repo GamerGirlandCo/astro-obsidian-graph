@@ -31,24 +31,13 @@ export function PixiGraphNode({
 	const basePoint = useMemo(() => new Point(0, radius), [lref.current, lref])
 	const offset = useRef<Point>(basePoint);
 	const { dragging, draggedNode, } = props;
-	const [hover, setHover] = useState<boolean>(node.hover ?? false);
+	const [hover, setHover] = useState<boolean>(false);
 	const [down, setDown] = useState<boolean>(false);
 
 	const [strokeWidth, setStrokeWidth] = useState(strokeRef.current);
 
 
-	const nodeTick = () => {
-		// if (gref.current) {
-		// 	gref.current.x = node.x!;
-		// 	gref.current.y = node.y!;
-		// }
-		// if (draggedNode.current && !draggedNode.current.gfx.label?.includes("label")) {
-		// 	draggedNode.current.gfx.x = draggedNode.current.node.x!;
-		// 	draggedNode.current.gfx.y = draggedNode.current.node.y!;
-		// }
-		node.hover = hover;
-	};
-	simulation.on("tick.node", nodeTick);
+
 	const fillo = (gi: Graphics) => {
 		gi.clear()
 		/* .setStrokeStyle({
@@ -97,14 +86,13 @@ export function PixiGraphNode({
 		} else if(hoveredNode == node.id) {
 				setHoveredNode(null);
 		}
-		node.hover = hover
 		if(!node.isCurrent)
 			gsap.to(strokeRef.current, {
 				duration: 0.25,
-				width: node.hover ? 2 : 0,
+				width: hover ? 2 : 0,
 				onUpdate: () => setStrokeWidth({width: strokeRef.current.width})
 			})
-	}, [hover, node, node.hover, setStrokeWidth, hoveredNode, setHoveredNode]);
+	}, [hover, node, setStrokeWidth, setHoveredNode]);
 	useEffect(() => {
 		if(!draggedNode.current)
 			offset.current = basePoint
@@ -137,7 +125,6 @@ export function PixiGraphNode({
 			gref.current?.removeAllListeners()
 			gref.current?.clear();
 			// gref.current?.destroy({ children: true });
-			simulation.on("tick.node", null);
 		};
 	}, [gref.current]);
 	const ha = useMemo(() => {
@@ -156,7 +143,7 @@ export function PixiGraphNode({
 		links,
 		radius
 	]);
-	const z = useMemo(() => node.isCurrent || node.hover ? 10 : -1, [node.isCurrent, node.hover]);
+	const z = useMemo(() => node.isCurrent || (hoveredNode == node.id) ? 10 : 0, [node.isCurrent, hoveredNode]);
 	return useMemo(
 		() => (
 			<pixiContainer
