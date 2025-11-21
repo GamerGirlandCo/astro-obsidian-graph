@@ -1,0 +1,40 @@
+---
+import type { GetStaticPaths } from "astro";
+import {
+	type CollectionEntry,
+	type CollectionKey,
+	type ContentEntryMap,
+	getCollection,
+} from "astro:content";
+import BlogPost from "../../layouts/BlogPost.astro";
+import * as collections from "../../content/config";
+import type { DataEntry, DataEntryMap } from "astro:content";
+import type { AnyEntryMap } from "astro:content";
+
+export const getStaticPaths = (async () => {
+	let ret: ReturnType<GetStaticPaths> = [];
+	for (let v in collections.collections) {
+		let posts = await getCollection(v as CollectionKey);
+		ret.push(
+			...posts.map((p) => {
+				let id = p.id.substring(0, p.id.lastIndexOf("."))
+				return {
+					params: {
+						slug: !!id ? id : undefined,
+						collection: p.collection,
+					},
+					props: p,
+				};
+			})
+		);
+	}
+	return ret;
+}) satisfies GetStaticPaths;
+type Props = CollectionEntry<'root'>;
+const post = Astro.props;
+const { Content } = await post.render();
+---
+
+<BlogPost {...post.data}>
+	<Content />
+</BlogPost>

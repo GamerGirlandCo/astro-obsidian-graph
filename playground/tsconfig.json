@@ -1,7 +1,18 @@
 {
-	"extends": "astro/tsconfigs/strict",
-	"compilerOptions": {
-		"jsx": "preserve"
-	},
-	"exclude": ["dist"]
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "resolvePackageJsonExports": true,
+    "moduleResolution": "Bundler",
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "src",
+    "typeRoots": [
+      "./types"
+    ],
+    "jsxImportSource": "react",
+    "esModuleInterop": true
+  },
+  "exclude": [
+    "dist"
+  ]
 }

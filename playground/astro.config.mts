@@ -2,16 +2,19 @@ import tailwind from "@astrojs/tailwind";
 import { createResolver } from "astro-integration-kit";
 import { hmrIntegration } from "astro-integration-kit/dev";
 import { defineConfig } from "astro/config";
-
-const { default: packageName } = await import("package-name");
+import react from "@astrojs/react";
+const {
+  default: obsidianGraph
+} = await import("astro-obsidian-graph/integration");
+console.log(obsidianGraph);
 
 // https://astro.build/config
 export default defineConfig({
-	integrations: [
-		tailwind(),
-		packageName(),
-		hmrIntegration({
-			directory: createResolver(import.meta.url).resolve("../package/dist"),
-		}),
-	],
+  integrations: [tailwind(), obsidianGraph({rootDir: "/"}), hmrIntegration({
+    directory: createResolver(import.meta.url).resolve("../package/dist")
+  })],
+  output: "static",
+  server: {
+		host: true,
+  }
 });
