@@ -87,7 +87,6 @@ export function usePointerLeave({
 	const { hoveredNode, setHoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
 	return useCallback(function (this: Graphics, _evt: FederatedPointerEvent) {
 			if (!draggedNode.current) {
-					node.hover = false
 					flushSync(() => {
 						setHover(false);
 					})
@@ -160,15 +159,14 @@ export function usePointerUp({
 		base?: Point
 }) {
 	const { draggedNode, dragging } = useContext(GRAPH_CONTEXT)!;
-	const { simulation, setHoveredNode, hoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
-	return useCallback(function(this: Graphics, _evt: FederatedPointerEvent) {
+	const { simulation, setHoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
+	return useCallback(function(this: Graphics, evt: FederatedPointerEvent) {
+			setHoveredNode(null);
+		if(evt.button != 0 && evt.pointerType === "mouse")
+			return
 		if (draggedNode.current) {
 			simulation.alphaTarget(0);
-			if(draggedNode.current) {
-					draggedNode.current.node.hover = false
-				}
-			setHoveredNode(null);
-				node.hover = dragging.current = false
+				dragging.current = false
 				setDown(false);
 			if(shouldChangeForce) {
 				draggedNode.current.node.fx = null;
@@ -194,6 +192,8 @@ export function usePointerDown({node, setDown, oref}: {
 	const { draggedNode, dragging } = useContext(GRAPH_CONTEXT)!;
 	const { simulation, parentRef } = useContext(INNER_GRAPH_CONTEXT)!;
 	return useCallback(function (this: Graphics, evt: FederatedPointerEvent) {
+		if(evt.button != 0 && evt.pointerType == "mouse")
+			return
 		if (!draggedNode.current) {
 			const isLabel = Boolean(this.label?.includes("label["));
 			const offset = evt.getLocalPosition(this);
@@ -216,7 +216,7 @@ export function usePointerDown({node, setDown, oref}: {
 				node.fx = node.x! - offset.x;
 				node.fy = node.y! - offset.y;
 			}
-			
+
 			setDown(true);
 			dragging.current = true;
 		}
@@ -233,7 +233,7 @@ export function usePointerOver({node, setHover}: {
 	return useCallback(function (this: Graphics) {
 		if (!draggedNode.current) {
 				flushSync(() => {
-					setHover(node.hover = true);
+					setHover(true);
 				})
 				flushSync(() => {
 					setHoveredNode(node.id);
