@@ -6,7 +6,7 @@
 		"resolveJsonModule": true,
 		"moduleResolution": "Bundler",
 		"baseUrl": "src",
-		"typeRoots": ["./typedefs", "./src/typedefs", "src/typedefs"],
+		"typeRoots": ["./typedefs", "./src/typedefs", "src/typedefs", "node_modules/@types", "node_modules/@pixijs/react"],
 		"allowSyntheticDefaultImports": true,
 		"paths": {
 			"@external/*": ["../node_modules/*"],
@@ -26,6 +26,6 @@
 		"noImplicitAny": false,
 		"outDir": "./dist",
 	},
-	"include": ["./src/**/*.ts", "./src/**/*.tsx", "node_modules/**/*.d.ts", "src/components/graph/Graph.not"],
+	"include": ["./src/**/*.ts", "./src/**/*.tsx", "node_modules/**/*.d.ts", "src/typedefs/**/*.d.ts", "src/typedefs/*.d.ts"],
 	"exclude": ["dist", "scr", "astro:prefetch", "astro:transitions/client", "astro:content"]
 }
