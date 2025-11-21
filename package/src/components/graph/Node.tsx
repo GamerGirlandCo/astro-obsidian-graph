@@ -93,13 +93,9 @@ export function PixiGraphNode({
 	);
 	useEffect(() => {
 		if(hover) {
-			flushSync(() => {
 				setHoveredNode(node.id);
-			})
 		} else if(hoveredNode == node.id) {
-			flushSync(() => {
 				setHoveredNode(null);
-			})
 		}
 		node.hover = hover
 		if(!node.isCurrent)
