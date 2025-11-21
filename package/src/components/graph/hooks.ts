@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { flushSync } from "react-dom";
 import type { RefObject } from "react";
 import { useContext, useCallback, useRef } from "react";
 import { Container, Graphics, type FederatedPointerEvent, Point } from "pixi.js";
@@ -46,7 +47,7 @@ export function useSimulation({
 			d3
 				.forceLink<GraphNode, GraphLink>(links)
 				.id((d) => d.id)
-				.distance(40)
+				.distance(graphConfig.linkDistance ?? 25)
 			// .distance((l) => l.strength * links.length)
 		)
 		.force(
@@ -83,10 +84,14 @@ export function usePointerLeave({
 		setStroke?: boolean
 }) {
 	const { draggedNode, colors } = useContext(GRAPH_CONTEXT)!;
+	const { hoveredNode, setHoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
 	return useCallback(function (this: Graphics, _evt: FederatedPointerEvent) {
 			if (!draggedNode.current) {
-				node.hover = false;
-				setHover(false);
+					node.hover = false
+					flushSync(() => {
+						setHover(false);
+					})
+				setHoveredNode(null);
 				if(!node.isCurrent && setStroke)
 				this?.stroke({
 					width: 0,
@@ -118,6 +123,9 @@ export function useMove({
 				hasLogged.current = Date.now()
 				return
 			}
+			if(draggedNode.current.node.id !== node.id) {
+				return;
+			}
 			if(!label && evt.target.label?.includes("label["))
 				label = evt.target as Graphics
 			const np = evt.getLocalPosition(parentRef.current!);
@@ -131,17 +139,10 @@ export function useMove({
 				// console.log({x: nx, y: ny}, "\n", {x: np.x, y: np.y}, "\nORIG->", {x: node.fx, y: node.fy}, "\n", {x: (offset?.current.x ?? 0) + nx, y: (offset?.current.y ?? 0) + ny})
 				// console.log(offset?.current)
 			}
-				if (draggedNode.current?.node.id === node.id) {
-					// console.log(evt)
-					node.fx = draggedNode.current.node.fx = nx;
-					node.fy = draggedNode.current.node.fy = ny;
-				} else if (draggedNode.current) {
-					draggedNode.current.node.fx = nx;
-					draggedNode.current.node.fy = ny;
-				}
-					// console.log({x: node.x, y: node.y}, {x: nx, y: ny})
+			draggedNode.current.node.fx = node.fx = nx;
+			draggedNode.current.node.fy = node.fy = ny;
 		},
-		[label, parentRef.current, ...additionalDeps, offset?.current, offset, offset?.current.x, offset?.current.y]
+		[label, parentRef.current, ...additionalDeps, offset?.current, offset, offset?.current.x, offset?.current.y, node.id]
 	)
 }
 
@@ -159,13 +160,16 @@ export function usePointerUp({
 		base?: Point
 }) {
 	const { draggedNode, dragging } = useContext(GRAPH_CONTEXT)!;
-	const { simulation } = useContext(INNER_GRAPH_CONTEXT)!;
+	const { simulation, setHoveredNode, hoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
 	return useCallback(function(this: Graphics, _evt: FederatedPointerEvent) {
 		if (draggedNode.current) {
 			simulation.alphaTarget(0);
-			dragging.current = false;
-			setDown(false);
-			draggedNode.current.node.hover = false;
+			if(draggedNode.current) {
+					draggedNode.current.node.hover = false
+				}
+			setHoveredNode(null);
+				node.hover = dragging.current = false
+				setDown(false);
 			if(shouldChangeForce) {
 				draggedNode.current.node.fx = null;
 				draggedNode.current.node.fy = null;
@@ -188,13 +192,23 @@ export function usePointerDown({node, setDown, oref}: {
 	oref?: RefObject<Point>
 }) {
 	const { draggedNode, dragging } = useContext(GRAPH_CONTEXT)!;
-	const { simulation } = useContext(INNER_GRAPH_CONTEXT)!;
+	const { simulation, parentRef } = useContext(INNER_GRAPH_CONTEXT)!;
 	return useCallback(function (this: Graphics, evt: FederatedPointerEvent) {
 		if (!draggedNode.current) {
-			draggedNode.current = { node, isDraggingLabel: this.label?.includes("label[") };
-			const offset = this.label?.includes("label[") ? evt.getLocalPosition(this) : new Point(0, 0)
-			if(oref) {
-				oref.current = new Point(offset.x + oref.current.x, offset.y + oref.current.y);
+			const isLabel = Boolean(this.label?.includes("label["));
+			const offset = evt.getLocalPosition(this);
+			draggedNode.current = { node, isDraggingLabel: isLabel };
+			if(isLabel && oref) {
+				if(
+					parentRef.current &&
+					typeof node.x === "number" &&
+					typeof node.y === "number"
+				) {
+					const parentPos = evt.getLocalPosition(parentRef.current);
+					oref.current = new Point(parentPos.x - node.x, parentPos.y - node.y);
+				} else {
+					oref.current = new Point(offset.x + oref.current.x, offset.y + oref.current.y);
+				}
 			}
 			simulation.alphaTarget(1).restart();
 			if(!oref)
@@ -202,12 +216,11 @@ export function usePointerDown({node, setDown, oref}: {
 				node.fx = node.x! - offset.x;
 				node.fy = node.y! - offset.y;
 			}
-			if(this.label)
-				console.log("pdown", this.label, evt.target.label, evt.getLocalPosition(this))
+			
 			setDown(true);
 			dragging.current = true;
 		}
-	}, [setDown, simulation])
+	}, [setDown, simulation, parentRef])
 }
 
 export function usePointerOver({node, setHover}: {
@@ -215,11 +228,16 @@ export function usePointerOver({node, setHover}: {
 	setHover: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
 
-	const { draggedNode, dragging } = useContext(GRAPH_CONTEXT)!;
+	const { draggedNode } = useContext(GRAPH_CONTEXT)!;
+	const { hoveredNode, setHoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
 	return useCallback(function (this: Graphics) {
 		if (!draggedNode.current) {
-			setHover(true);
-			node.hover = true;
+				flushSync(() => {
+					setHover(node.hover = true);
+				})
+				flushSync(() => {
+					setHoveredNode(node.id);
+				})
 		}
 	}, [draggedNode.current, setHover])
 }

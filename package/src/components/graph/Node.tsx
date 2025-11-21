@@ -1,9 +1,10 @@
 import { useApplication as useApp } from "@pixi/react";
 import type { Simulation } from "d3";
 import { Circle, Container, FederatedPointerEvent, Graphics, Point } from "pixi.js";
+import React, { type RefObject, useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import gsap from "gsap";
-import React, { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GraphContext } from "./context";
+import { INNER_GRAPH_CONTEXT, type GraphContext } from "./context";
 import { useGraphColor, useMove, useNodeRadius, usePointerDown, usePointerLeave, usePointerOver, usePointerUp } from "./hooks";
 import type { GraphLink, GraphNode } from "./types";
 import { NodeLabel } from "./Label";
@@ -22,13 +23,14 @@ export function PixiGraphNode({
 	parentRef: RefObject<Container | null>;
 }) {
 	const app = useApp();
+	const { viewportRef, hoveredNode, setHoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
 	const radius = useNodeRadius(node, links);
 	const strokeRef = useRef({width: 0});
 	const gref = useRef<Graphics>(null);
 	const lref = useRef<Graphics>(null);
 	const basePoint = useMemo(() => new Point(0, radius), [lref.current, lref])
 	const offset = useRef<Point>(basePoint);
-	const { dragging, draggedNode } = props;
+	const { dragging, draggedNode, } = props;
 	const [hover, setHover] = useState<boolean>(node.hover ?? false);
 	const [down, setDown] = useState<boolean>(false);
 
@@ -48,7 +50,7 @@ export function PixiGraphNode({
 	};
 	simulation.on("tick.node", nodeTick);
 	const fillo = (gi: Graphics) => {
-		gi
+		gi.clear()
 		/* .setStrokeStyle({
 					}) */
 			.circle(0, 0, useNodeRadius(node, links))
@@ -79,15 +81,7 @@ export function PixiGraphNode({
 		(g: Graphics) => {
 			boundMoveRef.current = move.bind(g);
 			boundPointerUp.current = pointerUp.bind(g);
-			g.removeAllListeners();
-
 			fillo(g);
-			g.on("pointerleave", pointerLeave)
-				.on("pointerdown", pointerDown)
-				.on("pointerover", pointerOver);
-
-			// g.x = node.x!;
-			// g.y = node.y!;
 			if(!node.isCurrent)
 				g.stroke({
 					width: strokeRef.current.width,
@@ -98,41 +92,58 @@ export function PixiGraphNode({
 		[node, draggedNode.current, hover, simulation, links, strokeRef.current, strokeWidth, pointerUp, pointerDown, pointerLeave, pointerOver, move]
 	);
 	useEffect(() => {
-		props.anyHovered.current = node.hover = hover;
+		if(hover) {
+			flushSync(() => {
+				setHoveredNode(node.id);
+			})
+		} else if(hoveredNode == node.id) {
+			flushSync(() => {
+				setHoveredNode(null);
+			})
+		}
+		node.hover = hover
 		if(!node.isCurrent)
 			gsap.to(strokeRef.current, {
 				duration: 0.25,
 				width: node.hover ? 2 : 0,
 				onUpdate: () => setStrokeWidth({width: strokeRef.current.width})
 			})
-	}, [hover, node, node.hover, setStrokeWidth]);
+	}, [hover, node, node.hover, setStrokeWidth, hoveredNode, setHoveredNode]);
 	useEffect(() => {
 		if(!draggedNode.current)
 			offset.current = basePoint
 	}, [basePoint])
 
 	useEffect(() => {
-		if (boundPointerUp.current)
+		if (boundPointerUp.current) {
 			parentRef.current
 				?.on("pointerup", boundPointerUp.current);
+			parentRef.current?.on("pointerupoutside", boundPointerUp.current);
+		}
 		if (boundMoveRef.current)
 			parentRef.current?.on("pointermove", boundMoveRef.current);
-		parentRef.current?.on("pointerupoutside", pointerUp);
 		return () => {
-			if(boundPointerUp.current)
+			if(boundPointerUp.current) {
 				parentRef.current?.removeListener("pointerup", boundPointerUp.current)
+
+				parentRef.current?.removeListener("pointerupoutside", boundPointerUp.current)
+			}
 			if(boundMoveRef.current)
 				parentRef.current?.removeListener("pointermove", boundMoveRef.current);
-			parentRef.current?.removeListener("pointerupoutside", pointerUp);
 		}
 	}, [parentRef.current, boundPointerUp.current, boundMoveRef.current, pointerUp])
 	useEffect(() => {
+		gref.current?.on("pointerleave", pointerLeave)
+				.on("pointerdown", pointerDown)
+				.on("pointerover", pointerOver)
+				.on("pointerup", pointerUp);
 		return () => {
+			gref.current?.removeAllListeners()
 			gref.current?.clear();
 			// gref.current?.destroy({ children: true });
 			simulation.on("tick.node", null);
 		};
-	}, []);
+	}, [gref.current]);
 	const ha = useMemo(() => {
 		let t = new Circle(radius / 2, radius / 2, radius + 10);
 		return t;
@@ -147,16 +158,18 @@ export function PixiGraphNode({
 		simulation,
 		draggedNode.current,
 		links,
+		radius
 	]);
-	const z = 10;
+	const z = useMemo(() => node.isCurrent || node.hover ? 10 : -1, [node.isCurrent, node.hover]);
 	return useMemo(
 		() => (
 			<pixiContainer
 					x={node.x!}
 					y={node.y!}
-					zIndex={node.isCurrent || node.hover ? z : 0}
+					zIndex={z}
 					eventMode="passive"
 			>
+				<NodeLabel offset={offset} ref={lref} node={node} {...{setHover, hover}} />
 				<pixiGraphics
 					ref={gref}
 					hitArea={ha}
@@ -165,7 +178,6 @@ export function PixiGraphNode({
 					draw={draw}
 					>
 				</pixiGraphics>
-					<NodeLabel offset={offset} ref={lref} node={node} {...{setHover, hover}} />
 			</pixiContainer>
 		),
 		[
@@ -176,9 +188,14 @@ export function PixiGraphNode({
 			dragging.current,
 			hover,
 			down,
+			ha,
 			draggedNode.current,
 			simulation,
+			viewportRef.current?.scale.x,
+			viewportRef.current?.scale,
+			viewportRef.current,
 			links,
+			z
 		]
 	);
 }

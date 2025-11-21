@@ -6,6 +6,7 @@ import type { Graphics } from "pixi.js";
 export interface GraphProps {
 	enableZoom: boolean;
 	repelForce?: number;
+	linkDistance?: number;
 	scale?: number;
 }
 export interface ColorProps {

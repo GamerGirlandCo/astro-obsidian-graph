@@ -1,25 +1,27 @@
 import { Application, useApplication as useApp, useExtend, useTick } from "@pixi/react";
+import { Viewport as BaseViewport } from "pixi-viewport";
 import type { AstroBuiltinAttributes } from "astro";
 import type { RefObject } from "react";
+import { flushSync } from "react-dom";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Viewport, ViewportWrapper } from "../ViewportShim";
+import gsap from "gsap";
+import { PixiPlugin } from "gsap/PixiPlugin";
 import {
 	Graphics as Gfx,
 	Container as PContainer,
-	Text
+	Text,
+	HTMLText
 } from "pixi.js";
 import type {
 	GraphNode,
 	Props,
 } from "./types";
+import { Viewport, ViewportWrapper } from "../ViewportShim";
 import { useParsedLinks } from "./utils";
-import gsap from "gsap";
-import { PixiPlugin } from "gsap/PixiPlugin";
 import { GRAPH_CONTEXT, INNER_GRAPH_CONTEXT, type GraphContext } from "./context";
 import { useSimulation } from "./hooks";
 import { PixiGraphNode } from "./Node";
 import { PixiGraphLink } from "./Link";
-import { NodeLabel } from "./Label";
 
 gsap.registerPlugin(PixiPlugin);
 
@@ -30,8 +32,11 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 	const { graphConfig, container, linkGfx, colors, draggedNode } = props;
 
 	const { app } = useApp();
+	const viewportRef = useRef<ViewportWrapper | null>(null)
 	const [linkEls, setLinkEls] = useState<React.ReactElement[]>([]);
 	const [nodeEls, setNodeEls] = useState<React.ReactElement[]>([]);
+	const [zoom, setZoom] = useState(1);
+	const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 	const [simulation, destroy] = useMemo(
 		() =>
 			useSimulation({
@@ -45,11 +50,13 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 
 	const outerTick = useCallback(
 		function hi() {
-			setLinkEls(
-				links.map((l) => (
-					<PixiGraphLink key={l.index} link={l} colors={props.colors} />
-				))
-			);
+			flushSync(() => {
+				setLinkEls(
+					links.map((l) => (
+						<PixiGraphLink key={l.index} link={l} colors={props.colors} />
+					))
+				);
+			})
 			setNodeEls(
 				nodes.map((n) => (
 					<PixiGraphNode
@@ -63,7 +70,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 				))
 			);
 		},
-		[props, links, nodes, simulation, props, draggedNode]
+		[props, links, nodes, simulation, props, draggedNode, viewportRef.current, viewportRef.current?.scale, viewportRef.current?.scale.x, hoveredNode]
 	);
 	const cRef = useRef<PContainer>(null);
 	useEffect(() => {
@@ -74,12 +81,14 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 				container.current.clientWidth,
 				container.current.clientHeight
 			);
+			return () => {
+				simulation.on("tick.outer", null);
+			}
 	}, [simulation, outerTick]);
 	useTick(() => {
 		simulation!.tick();
 	});
 
-	const viewportRef = useRef<ViewportWrapper | null>(null)
 	const cfgr = useCallback((c: ViewportWrapper) => {
 		console.log("config", c, c.boundsArea)
 		c.boundsArea = app.screen
@@ -89,15 +98,22 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 	}, [props, container.current]);
 
 	useEffect(() => {
+		const listener = function(vp: BaseViewport) {
+			setZoom(vp.scale.x)
+		}
 		if(viewportRef.current) {
 			console.log(viewportRef.current.getBounds(), viewportRef.current.hitArea)
+			viewportRef.current?.on("zoomed-end", listener)
 		}
-	}, [viewportRef])
+		return () => {
+			viewportRef.current?.removeListener("zoomed-end", listener);
+		}
+	}, [viewportRef, viewportRef.current])
 
 	// console.log("vpr", viewportRef)
 	// console.log(viewportRef.current?.getBounds(), viewportRef.current?.hitArea, app.screen)
 	return useMemo(() => (
-		<INNER_GRAPH_CONTEXT.Provider value={{nodes, links, parentRef: cRef, simulation}}>
+		<INNER_GRAPH_CONTEXT.Provider value={{nodes, links, parentRef: cRef, simulation, viewportRef, zoom, hoveredNode, setHoveredNode}}>
 			<Viewport configure={cfgr} ref={viewportRef} disableOnContextMenu
 				worldHeight={document.body.clientHeight}
 				worldWidth={document.body.clientWidth}
@@ -111,17 +127,17 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 				{/*<pixiContainer>{labels}</pixiContainer>*/}
 			</Viewport>
 		</INNER_GRAPH_CONTEXT.Provider>),
-			[nodes, links, simulation, props, linkEls, nodeEls, outerTick]
+			[nodes, links, simulation, props, linkEls, nodeEls, outerTick, zoom, setHoveredNode]
 		)
 })
 
 
-function OuterPixiGraph(props: Props & AstroBuiltinAttributes) {
+const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
 	const divRef = useRef<HTMLDivElement>(null);
 	const linkGraphics = new Gfx();
 	const dragging = useRef<boolean>(false);
+	const hoveredNode = useRef<string>(null);
 	const currentDraggedNode = useRef<{ node: GraphNode; isDraggingLabel: boolean }>(null);
-	const anyHovered = useRef(false);
 	const context = useMemo(
 		() => ({
 			dragging,
@@ -135,7 +151,7 @@ function OuterPixiGraph(props: Props & AstroBuiltinAttributes) {
 			container: divRef as RefObject<HTMLDivElement>,
 			linkGfx: linkGraphics,
 			draggedNode: currentDraggedNode,
-			anyHovered
+			hoveredNode
 		}),
 		[props, linkGraphics]
 	);
@@ -170,9 +186,9 @@ function OuterPixiGraph(props: Props & AstroBuiltinAttributes) {
 			</Application>
 		</div>
 	);
-}
+})
 
 export function PixiGraph(props: Props & AstroBuiltinAttributes) {
-	useExtend({Container: PContainer, Graphics: Gfx, ViewportWrapper, Text})
+	useExtend({Container: PContainer, Graphics: Gfx, ViewportWrapper, Text, HTMLText, HtmlText: HTMLText})
 	return <OuterPixiGraph {...props} />;
 }

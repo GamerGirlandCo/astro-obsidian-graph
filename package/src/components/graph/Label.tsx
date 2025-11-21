@@ -15,7 +15,8 @@ export const NodeLabel = forwardRef(function ({node, hover, setHover, offset}: {
 	const gctx = useContext(GRAPH_CONTEXT);
 	if(!gctx)
 		return null
-	const { links, parentRef } = useContext(INNER_GRAPH_CONTEXT)!;
+	const { links, viewportRef, zoom } = useContext(INNER_GRAPH_CONTEXT)!;
+	const textRes = useMemo(() => Math.max(zoom ?? 1, 1), [zoom])
 
 	const [down, setDown] = useState<boolean>(false);
 	const bgAlpha = useRef({ alpha: 0.5 });
@@ -50,24 +51,25 @@ export const NodeLabel = forwardRef(function ({node, hover, setHover, offset}: {
 		// g.x = node.x! + (bgWidth / 2)
 		// g.y = node.y! + bgHeight!
 		g.on("pointerleave", pointerLeave.bind(g))
-				.on("pointerdown", boundPointerDown.current)
-				.on("pointerup", function(this: Graphics, evt) {
-					pointerUp.call(this, evt)
-				})
-				.on("pointerover", pointerOver.bind(g))
+			.on("pointerdown", boundPointerDown.current)
+			.on("pointerup", function(this: Graphics, evt) {
+				pointerUp.call(this, evt)
+			})
+			.on("pointerover", pointerOver.bind(g))
 		if (tref.current) {
 			// console.log(`w=${bgWidth}; h=${bgHeight}`)
-			g
+			g.clear().setFillStyle({
+				color: (colors.labelBg ?? "#ededed"),
+				// alpha: bgAlpha.current.alpha
+			})
 				.roundRect(
 					0,
 					0,
 					bgWidth,
 					bgHeight,
 					3.75
-				).fill({
-					color: colors.labelBg ?? "#ededed",
-					alpha: bgAlpha.current.alpha
-				})
+				)
+				.fill()
 		}
 
 		if(cref.current) {
@@ -87,14 +89,11 @@ export const NodeLabel = forwardRef(function ({node, hover, setHover, offset}: {
 	]);
 
 	useEffect(() => {
-		if(node.hover != hover) {
-			node.hover = hover
-		}
-		gsap.to(bgAlpha.current, {
-				alpha: node.hover ? 1: 0.5,
+		gsap.to(cref.current, {
+				alpha: hover ? 1 : 0.5,
 				duration: 0.3
 			})
-	}, [hover, node.hover]);
+	}, [node.hover]);
 
 	// useEffect(() => {
 	// 	if(parentRef.current) {
@@ -119,18 +118,19 @@ export const NodeLabel = forwardRef(function ({node, hover, setHover, offset}: {
 	// if(node.hover)
 		// console.log(`{ id=${node.id}, offset=${yOffset} }`)
 		return useMemo(() => (
-		<pixiContainer eventMode="passive" alpha={bgAlpha.current.alpha} ref={cref} label={`container.label[${node.id}]`} anchor={{x: 0.5, y: 0}} y={additionalY}>
+		<pixiContainer eventMode="passive" ref={cref} label={`container.label[${node.id}]`} anchor={{x: 1, y: 0}} y={additionalY} x={-bgWidth} isRenderGroup>
 				<pixiGraphics draw={bgDraw} ref={ref} eventMode="static" hitArea={ha} label={`label[${node.id}]`}>
 					</pixiGraphics>
 					<pixiText
+					resolution={textRes}
 					eventMode="none"
 					ref={tref}
 					x={labels.padding}
 					y={labels.padding}
 					text={node.title}
-					style={{ align: "center", fontSize: "14pt", fill: colors.label ?? "000" }}
+					style={{ align: "center", fontSize: "14pt", fill: colors.label ?? "#000" }}
 					/>
 		</pixiContainer>
-		), [node, hover, node.x, node.y, offset, ha, bgDraw, bgAlpha.current.alpha])
+		), [node.title, textRes, hover, offset, ha, bgDraw, bgAlpha.current.alpha, bgAlpha.current, bgAlpha, zoom])
 })
 NodeLabel.displayName = "NodeLabel"
