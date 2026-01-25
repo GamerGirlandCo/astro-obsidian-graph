@@ -12,7 +12,6 @@ import type { ViewportWrapper } from "components/ViewportShim";
 
 export interface GraphContext extends Props, AstroBuiltinAttributes {
 	container: RefObject<HTMLDivElement>;
-	linkGfx: Graphics;
 	dragging: RefObject<boolean>;
 	draggedNode: RefObject<{ node: GraphNode; isDraggingLabel: boolean; } | null>;
 }
