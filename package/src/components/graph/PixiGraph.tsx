@@ -29,7 +29,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 	const [links, nodes] = useParsedLinks(props);
 	// const nodes: GraphNode[] = [];
 	// const links: GraphLink[] = []
-	const { graphConfig, container, linkGfx, colors, draggedNode } = props;
+	const { graphConfig, container, colors, draggedNode } = props;
 
 	const { app } = useApp();
 	const viewportRef = useRef<ViewportWrapper | null>(null)
