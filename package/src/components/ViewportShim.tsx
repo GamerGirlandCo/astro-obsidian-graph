@@ -21,6 +21,8 @@ export class ViewportWrapper extends BaseViewport {
 extend({ ViewportWrapper });
 
 const Viewport = forwardRef(function (props: PropsWithChildren<ViewportProps>, ref: ForwardedRef<ViewportWrapper>) {
+	if(!props)
+		return null
   const { children, ...rest } = props;
   const { app } = useApplication();
   return (
