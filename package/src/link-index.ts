@@ -30,7 +30,7 @@ export class LinkIndex implements AstroIntegration {
 			"astro:config:setup": ({ updateConfig, injectRoute }) => {
 				updateConfig({
 					prefetch: true,
-					integrations: [react(), mdx({ extendMarkdownConfig: true })],	
+					integrations: [mdx({ extendMarkdownConfig: true }), react()],	
 					markdown: {
 						remarkPlugins: [
 							[
@@ -41,7 +41,7 @@ export class LinkIndex implements AstroIntegration {
 								},
 							],
 						],
-					},
+					},	
 				});	
 				injectRoute({
 					entrypoint: "astro-obsidian-graph/endpoints/links",
