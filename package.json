@@ -1,7 +1,7 @@
 {
 	"name": "root",
 	"private": true,
-	"packageManager": "pnpm@9.7.0",
+	"packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c",
 	"engines": {
 		"node": ">=18.20.3"
 	},
@@ -24,7 +24,7 @@
 			"@portaljs/remark-wiki-link@1.2.0": "patches/@portaljs__remark-wiki-link@1.2.0.patch",
 			"ts-transformer-keys@0.4.4": "patches/ts-transformer-keys@0.4.4.patch",
 			"@d3fc/d3fc-label-layout": "patches/@d3fc__d3fc-label-layout.patch"
-		}	
+		}
 	},
 	"workspaces": [
 		"package",
