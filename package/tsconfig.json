@@ -9,7 +9,7 @@
 		"typeRoots": ["./typedefs", "./src/typedefs", "src/typedefs", "node_modules/@types", "node_modules/@pixijs/react"],
 		"allowSyntheticDefaultImports": true,
 		"paths": {
-			"@external/*": ["../node_modules/*"],
+			"@external/astro/*": ["../node_modules/astro/*"],
 		},
 		"jsx": "preserve",
 		"jsxFragmentFactory": "React.Fragment",

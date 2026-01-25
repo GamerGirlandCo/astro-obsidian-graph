@@ -1,6 +1,7 @@
 import { defineIntegration } from "astro-integration-kit";
 import type { LinkIndexConfig } from "./types";
-import {z} from "astro/zod"
+import {z} from "astro/zod";
+import react from "@astrojs/react"
 import { LinkIndex } from "./link-index";
 
 export const obsidianGraph = defineIntegration({

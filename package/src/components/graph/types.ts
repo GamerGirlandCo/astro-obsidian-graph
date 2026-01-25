@@ -48,6 +48,12 @@ export interface GraphNode extends SimulationNodeDatum {
 	title: string;
 	color?: CSSProperties["color"];
 	collection: string;
+	labelProps: {
+		width: number;
+		height: number;
+		x: number;
+		y: number;
+	}
 }
 export interface SpriteGraphNode extends GraphNode {
 	gfx: Graphics;

@@ -40,14 +40,14 @@ export function useSimulation({
 		.forceSimulation<GraphNode>(nodes)
 		.force(
 			"charge",
-			d3.forceManyBody().strength(-100 * (graphConfig.repelForce ?? 4))
+			d3.forceManyBody().strength(-50 * (graphConfig.repelForce ?? 4))
 		)
 		.force(
 			"link",
 			d3
 				.forceLink<GraphNode, GraphLink>(links)
 				.id((d) => d.id)
-				.distance(graphConfig.linkDistance ?? 25)
+				.distance((graphConfig.linkDistance ?? 25))
 			// .distance((l) => l.strength * links.length)
 		)
 		.force(
@@ -230,7 +230,9 @@ export function usePointerOver({node, setHover}: {
 
 	const { draggedNode } = useContext(GRAPH_CONTEXT)!;
 	const { hoveredNode, setHoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
-	return useCallback(function (this: Graphics) {
+	return useCallback(function (this: Graphics, evt: FederatedPointerEvent) {
+		if(evt.nativeEvent.target instanceof HTMLElement && evt.nativeEvent.target.tagName.toLocaleLowerCase() != "canvas")
+			return
 		if (!draggedNode.current) {
 				flushSync(() => {
 					setHover(true);
