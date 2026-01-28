@@ -14,10 +14,12 @@ export function PixiGraphNode({
 	simulation,
 	graphProps: props,
 	links = [],
+	index,
 	parentRef,
 }: {
 	node: GraphNode;
 	links: GraphLink[];
+	index: number;
 	simulation: Simulation<GraphNode, GraphLink>;
 	graphProps: GraphContext;
 	parentRef: RefObject<Container | null>;
@@ -152,7 +154,7 @@ export function PixiGraphNode({
 					zIndex={z}
 					eventMode="passive"
 			>
-				<NodeLabel offset={offset} ref={lref} node={node} {...{setHover, hover}} />
+				<NodeLabel index={index} offset={offset} ref={lref} node={node} {...{setHover, hover}} />
 				<pixiGraphics
 					ref={gref}
 					hitArea={ha}

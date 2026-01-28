@@ -42,18 +42,25 @@ export interface Props {
 	};
 }
 
+export interface LabelProps {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+
+	_vx?: number;
+	_vy?: number;
+	_baseX?: number;
+	_baseY?: number;
+}
+
 export interface GraphNode extends SimulationNodeDatum {
 	isCurrent: boolean;
 	id: string;
 	title: string;
 	color?: CSSProperties["color"];
 	collection: string;
-	labelProps: {
-		width: number;
-		height: number;
-		x: number;
-		y: number;
-	}
+	labelProps?: LabelProps;
 }
 export interface SpriteGraphNode extends GraphNode {
 	gfx: Graphics;
@@ -76,8 +83,4 @@ export interface Rect {
 	width: number;
 	x: number;
 	y: number;
-	left: number;
-	right: number;
-	top: number;
-	bottom: number;
 }

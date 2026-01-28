@@ -1,8 +1,9 @@
 import type { AstroBuiltinAttributes } from "astro";
 import { createContext, type RefObject, type Dispatch, type SetStateAction } from "react";
-import type { Simulation } from "d3";
+import type { Simulation } from "d3-force";
+import type { Quadtree } from "d3";
 import { Graphics, Container } from "pixi.js";
-import type { GraphLink, GraphNode, Props } from "./types";
+import type { GraphLink, GraphNode, Props, Rect } from "./types";
 import type { ViewportWrapper } from "components/ViewportShim";
 
 /*type Textures = {
@@ -27,6 +28,7 @@ interface InnerGraphContext {
 	zoom: number;
 	hoveredNode: string | null;
 	setHoveredNode: Dispatch<SetStateAction<string | null>>;
+	updateNodeLabelProps: (idx: number, props: Rect) => void;
 }
 
 export const INNER_GRAPH_CONTEXT = createContext<InnerGraphContext | null>(null);
