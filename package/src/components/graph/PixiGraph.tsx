@@ -198,6 +198,11 @@ const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
 	const linkGraphics = new Gfx();
 	const dragging = useRef<boolean>(false);
 	const hoveredNode = useRef<string>(null);
+	const graphConfig = Object.assign({
+		hideInactiveLabels: true,
+		dimOnDrag: false,
+		enableZoom: true,
+	}, props.graphConfig ?? {});
 	const currentDraggedNode = useRef<{
 		node: GraphNode;
 		isDraggingLabel: boolean;
@@ -212,6 +217,7 @@ const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
 				},
 				props.colors
 			),
+			graphConfig,
 			container: divRef as RefObject<HTMLDivElement>,
 			linkGfx: linkGraphics,
 			draggedNode: currentDraggedNode,
