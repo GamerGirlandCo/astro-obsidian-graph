@@ -65,6 +65,14 @@ export const buildIndex = (root: string): LinkIndex => {
 					source: rf,
 					target: realPermalink,
 				});
+				finalIndex.backlinks[rf]!.push({
+					source: realPermalink,
+					target: rf,
+				});
+				finalIndex.links[realPermalink]!.push({
+					source: realPermalink,
+					target: rf,
+				});
 				finalIndex.backlinks[realPermalink]!.push({
 					source: rf,
 					target: realPermalink,
