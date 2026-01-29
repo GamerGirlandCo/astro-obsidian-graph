@@ -1,16 +1,16 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
-import {PixiGraph as Graph} from "astro-obsidian-graph/components"
+import type { CollectionEntry } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+import { PixiGraph as Graph } from "astro-obsidian-graph/components";
 
-type Props = CollectionEntry<'root'>['data'];
+type Props = CollectionEntry<"root">["data"];
 
 const { title, description, pubDate, updatedDate } = Astro.props;
 const url = Astro.url;
-console.log("why")
+console.log("why");
 ---
 
 <html lang="en">
@@ -61,12 +61,22 @@ console.log("why")
 		<Header />
 		<main>
 			<div>
-				<Graph client:only="react" labels={{padding: 4, borderWidth: 0, borderStyle: "solid"}} rootDir='/root' graphConfig={{}} currentUrl={url.pathname} colors={{nodeInactive: "#1aadab", activeNode: "#00e7e3", activeLink: "#ff69a3"}} />
+				<Graph
+					client:only="react"
+					labels={{ padding: 4, borderWidth: 1, borderStyle: "dashed", fontFamily: "monospace", fontSize: "13pt" }}
+					rootDir="/root"
+					graphConfig={{ dimOnDrag: true, hideInactiveLabels: false }}
+					currentUrl={url.pathname}
+					colors={{
+						nodeInactive: "#1aadab",
+						activeNode: "#00e7e3",
+						activeLink: "#ff69a3",
+					}}
+				/>
 			</div>
 
 			<article>
-				<div class="hero-image">
-				</div>
+				<div class="hero-image"></div>
 				<div class="prose">
 					<div class="title">
 						<div class="date">
