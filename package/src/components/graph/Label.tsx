@@ -14,6 +14,7 @@ import React, {
 import { Graphics, Container, Text, Rectangle, Point } from "pixi.js";
 import gsap from "gsap";
 import type { GraphNode } from "./types";
+import { angleBetweenPoints } from "./utils";
 import { GRAPH_CONTEXT, INNER_GRAPH_CONTEXT } from "./context";
 import {
 	useMove,
@@ -30,7 +31,7 @@ export const NodeLabel = forwardRef(function (
 		hover,
 		setHover,
 		offset,
-		index,
+		index
 	}: {
 		node: GraphNode;
 		hover: boolean;
@@ -42,7 +43,8 @@ export const NodeLabel = forwardRef(function (
 ) {
 	const gctx = useContext(GRAPH_CONTEXT);
 	if (!gctx) return null;
-	const { links, viewportRef, zoom, updateNodeLabelProps } = useContext(INNER_GRAPH_CONTEXT)!;
+	const { links, viewportRef, zoom, updateNodeLabelProps, currentNode } =
+		useContext(INNER_GRAPH_CONTEXT)!;
 	const textRes = useMemo(() => Math.max(zoom ?? 1, 1), [zoom]);
 
 	const [down, setDown] = useState<boolean>(false);
@@ -59,17 +61,7 @@ export const NodeLabel = forwardRef(function (
 		const height = tref.current ? tref.current.height : 0;
 		return height + labels.padding * 2;
 	}, [tref.current?.height, labels.padding]);
-	const additionalY = useNodeRadius(node, links);
-
-	useEffect(() => {
-		updateNodeLabelProps(index, {
-			x: -(bgWidth / 2),
-			y: additionalY,
-			width: bgWidth,
-			height: bgHeight,
-		});	
-	}, [additionalY, bgHeight, bgWidth, node, node.x, node.y]);
-	
+	const additionalY = useNodeRadius(node, links);	
 
 	const move = useMove({
 		node,
@@ -157,6 +149,15 @@ export const NodeLabel = forwardRef(function (
 	const ha = useMemo(() => {
 		return new Rectangle(0, 0, bgWidth, bgHeight);
 	}, [bgWidth, bgHeight]);
+
+	useEffect(() => {
+		updateNodeLabelProps(index, {
+			x: node.labelProps?.x ?? 0,
+			y: node.labelProps?.y ?? 0,
+			width: bgWidth,
+			height: bgHeight,
+		});
+	}, [bgWidth, bgHeight]);
 	// if(node.hover)
 	// console.log(`{ id=${node.id}, offset=${yOffset} }`)
 	return useMemo(
@@ -165,9 +166,9 @@ export const NodeLabel = forwardRef(function (
 				eventMode="passive"
 				ref={cref}
 				label={`container.label[${node.id}]`}
-				anchor={{ x: 1, y: 0 }}
-				y={node.labelProps?.y ?? additionalY}
-				x={node.labelProps?.x ?? -(bgWidth / 2)}
+				anchor={{ x: 0, y: 0 }}
+				y={node.labelProps?.y ?? 0}
+				x={node.labelProps?.x ?? 0}
 				isRenderGroup
 			>
 				<pixiGraphics
@@ -203,7 +204,9 @@ export const NodeLabel = forwardRef(function (
 			bgAlpha.current,
 			bgAlpha,
 			zoom,
-			node.labelProps,
+			node.labelProps?.x,
+			node.labelProps?.y,
+			currentNode.current,
 		]
 	);
 });

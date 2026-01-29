@@ -29,6 +29,7 @@ interface InnerGraphContext {
 	hoveredNode: string | null;
 	setHoveredNode: Dispatch<SetStateAction<string | null>>;
 	updateNodeLabelProps: (idx: number, props: Rect) => void;
+	currentNode: RefObject<GraphNode | null>;
 }
 
 export const INNER_GRAPH_CONTEXT = createContext<InnerGraphContext | null>(null);

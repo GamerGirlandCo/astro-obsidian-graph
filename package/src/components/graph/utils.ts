@@ -1,8 +1,9 @@
-import { suburl } from "client-utils";
 import { useState, useEffect, useCallback } from "react";
+import chroma from "chroma-js";
+import type { Point } from "pixi.js";
+import { suburl } from "client-utils";
 import type { FullLinkIndex } from "types";
 import type { GraphLink, GraphNode, Props } from "./types";
-import chroma from "chroma-js";
 
 async function getEntry({
 	slug,
@@ -29,7 +30,7 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 	useEffect(() => {
 		const controller = new AbortController();
   	const signal = controller.signal;
-		console.log("EFFECT");
+		console.debug("EFFECT");
 		(async () => {
 			const { links: indexLinks, index } = (await (
 				await fetch("/api/links.json", {signal})
@@ -95,9 +96,9 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 						})
 					)
 					).flat(4);
-				console.log("wtf", wtf);
+				console.debug("wtf", wtf);
 				workingSet.push(...wtf);
-				console.log("nodes", workingSet);
+				console.debug("nodes", workingSet);
 				/* workingSet = workingSet.filter((v, _, a) => {
 				console.log("fil", v);
 				return a.findIndex((b) => b.id === v.id) != -1;
@@ -212,4 +213,23 @@ export function cssToRgb(css: string): [number, number, number, number] {
 
 export function isNone(css: string): boolean {
 	return css === "none" || css === "" || cssToRgb(css).slice(0, 3).every(a => a === 0);
+}
+
+export function angleBetweenPoints(p1: Point, p2: Point, offset: number = 0) {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  
+  let angleRad = Math.atan2(dy, dx);
+  
+  let angleDeg = angleRad * (180 / Math.PI);
+  
+  angleDeg = (-(90 - angleDeg)) % 360;
+
+	angleDeg += offset;
+  
+  if (angleDeg < 0) {
+    angleDeg += 360;
+  }	
+  
+  return angleDeg;
 }

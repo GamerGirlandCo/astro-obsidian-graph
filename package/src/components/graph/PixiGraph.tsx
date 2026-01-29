@@ -55,6 +55,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 		graphConfig,
 		container,
 	});
+	const currentNode = useRef<GraphNode | null>(nodes.find(n => n.isCurrent) ?? null);
 
 	const _stuff = tick;
 
@@ -103,6 +104,9 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 
 	const cRef = useRef<PContainer>(null);
 	useEffect(() => {
+		currentNode.current = nodes.find(n => n.isCurrent) ?? null;
+	}, [nodes, tick])
+	useEffect(() => {
 		simulation?.restart();
 		simulation?.on("tick.outer", outerTick);
 		if (container.current)
@@ -120,7 +124,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 
 	const cfgr = useCallback(
 		(c: ViewportWrapper) => {
-			console.log("config", c, c.boundsArea);
+			console.debug("config", c, c.boundsArea);
 			c.boundsArea = app.screen;
 			c.drag({ mouseButtons: "right" }).pinch().wheel({
 				interrupt: true,
@@ -134,7 +138,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 			setZoom(vp.scale.x);
 		};
 		if (viewportRef.current) {
-			console.log(viewportRef.current.getBounds(), viewportRef.current.hitArea);
+			console.debug(viewportRef.current.getBounds(), viewportRef.current.hitArea);
 			viewportRef.current?.on("zoomed-end", listener);
 		}
 		return () => {
@@ -157,6 +161,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 					hoveredNode,
 					setHoveredNode,
 					updateNodeLabelProps,
+					currentNode,
 				}}
 			>
 				<Viewport
@@ -188,6 +193,8 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 			outerTick,
 			zoom,
 			setHoveredNode,
+			updateNodeLabelProps,
+			currentNode,
 		]
 	);
 });
