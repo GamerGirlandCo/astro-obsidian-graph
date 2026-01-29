@@ -24,7 +24,7 @@ export const PixiGraphLink = forwardRef<
 	let { source: rsource, target: rtarget } = link;
 	let source = rsource as GraphNode,
 		target = rtarget as GraphNode;
-	const gctx = useContext(GRAPH_CONTEXT);
+	const {draggedNode, graphConfig} = useContext(GRAPH_CONTEXT)!;
 	const { hoveredNode } = useContext(INNER_GRAPH_CONTEXT)!;
 	const elRef = useRef<Graphics>(null);
 	const playedRef = useRef(false);
@@ -32,6 +32,9 @@ export const PixiGraphLink = forwardRef<
 		() => source.id == hoveredNode || target.id == hoveredNode,
 		[source, target, source.id, target.id, hoveredNode]
 	);
+	const shouldDim = useMemo(() => {
+		return graphConfig.dimOnDrag && draggedNode.current && !(source.id == draggedNode.current.node.id || target.id == draggedNode.current.node.id);
+	}, [draggedNode.current, source, target, graphConfig.dimOnDrag]);
 	const color = useMemo(() => {
 
 		return active ? colors.activeLink! : colors.linkInactive ?? "#ababab"
@@ -44,9 +47,11 @@ export const PixiGraphLink = forwardRef<
 	const [colorState, setColor] = useState(initialState.current)
 
 	const fillFn = useCallback((g: Graphics) => {
+		g.alpha = shouldDim ? 0.5 : 1;
 		g.clear().moveTo(source.x!, source.y!).lineTo(target.x!, target.y!).stroke({
 		 width: 1.2,
-			color: initialState.current.color
+			color: initialState.current.color,
+			alpha: shouldDim ? 0.5 : 1
 		});
 	}, [active, source, target, color, colorState, initialState.current, hoveredNode])
 	const draw = useCallback(
@@ -65,7 +70,7 @@ export const PixiGraphLink = forwardRef<
 			fillFn,
 			hoveredNode
 		]
-	);
+	);	
 	useEffect(() => {
 			gsap.to(initialState.current, {
 				color,

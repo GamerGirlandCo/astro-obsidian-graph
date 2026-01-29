@@ -8,6 +8,7 @@ export interface GraphProps {
 	repelForce?: number;
 	linkDistance?: number;
 	scale?: number;
+	dimOnDrag?: boolean;
 	hideInactiveLabels?: boolean;
 }
 export interface ColorProps {

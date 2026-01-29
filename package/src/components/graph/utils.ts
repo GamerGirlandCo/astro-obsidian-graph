@@ -1,7 +1,8 @@
 import { suburl } from "client-utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { FullLinkIndex } from "types";
 import type { GraphLink, GraphNode, Props } from "./types";
+import chroma from "chroma-js";
 
 async function getEntry({
 	slug,
@@ -187,4 +188,28 @@ export function useScuffed<T>(promise: Promise<T>) {
 		})();
 	}, [setRes]);
 	return res;
+}
+
+export function getMixedColor(
+	fg: [number, number, number],
+	bg: [number, number, number],
+	fgAlpha: number
+) {
+	return chroma.mix(chroma(bg), chroma(fg), fgAlpha, "rgb").hex();
+}
+
+export function cssToRgb(css: string): [number, number, number, number] {
+	if (css.startsWith("#")) return [...hexToRgb(css), 1];
+	if (css === "none" || css === "") return [0, 0, 0, 0];
+	return css
+		.replace(
+			/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d*(?:\.?\d+)))?\)/,
+			"$1,$2,$3,$4"
+		)
+		.split(",")
+		.map((s) => s !== "" ? Number(s.trim()) : 1) as [number, number, number, number];
+}
+
+export function isNone(css: string): boolean {
+	return css === "none" || css === "" || cssToRgb(css).slice(0, 3).every(a => a === 0);
 }
