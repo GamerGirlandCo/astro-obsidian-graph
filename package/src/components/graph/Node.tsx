@@ -244,7 +244,7 @@ export function PixiGraphNode({
 		};
 	}, [gref.current]);
 	const ha = useMemo(() => {
-		let t = new Circle(radius / 2, radius / 2, radius + 10);
+		let t = new Circle(0, 0, radius);
 		return t;
 	}, [
 		draw,
