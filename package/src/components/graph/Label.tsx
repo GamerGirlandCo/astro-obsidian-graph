@@ -133,7 +133,7 @@ export const NodeLabel = forwardRef(function (
 
 	useEffect(() => {
 		gsap.to(cref.current, {
-			alpha: hover ? 1 : 0,
+			alpha: hover ? 1 : gctx.graphConfig.hideInactiveLabels ? 0 : 0.5,
 			duration: 0.3,
 		});
 	}, [hover]);
