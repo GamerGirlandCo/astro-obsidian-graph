@@ -24,6 +24,7 @@ import {
 	Container as PContainer,
 	Text,
 	HTMLText,
+	Rectangle,
 } from "pixi.js";
 import type { GraphNode, GraphLink, Props, Rect } from "./types";
 import { Viewport, ViewportWrapper } from "../ViewportShim";
@@ -144,7 +145,7 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 		return () => {
 			viewportRef.current?.removeListener("zoomed-end", listener);
 		};
-	}, [viewportRef, viewportRef.current]);
+	}, [viewportRef, viewportRef.current]);	
 
 	// console.log("vpr", viewportRef)
 	// console.log(viewportRef.current?.getBounds(), viewportRef.current?.hitArea, app.screen)
@@ -174,8 +175,8 @@ const InnerPixiGraph = memo(function (props: GraphContext) {
 					<pixiContainer>{linkEls}</pixiContainer>
 					<pixiContainer
 						eventMode="static"
-						hitArea={viewportRef.current?.hitArea!}
 						ref={cRef}
+						hitArea={viewportRef.current?.hitArea ?? null}
 					>
 						{nodeEls}
 					</pixiContainer>

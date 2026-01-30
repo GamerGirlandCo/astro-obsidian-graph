@@ -314,6 +314,7 @@ export function usePointerDown({
 	const { simulation, parentRef } = useContext(INNER_GRAPH_CONTEXT)!;
 	return useCallback(
 		function (this: Graphics, evt: FederatedPointerEvent) {
+			evt.stopPropagation();
 			if (evt.button != 0 && evt.pointerType == "mouse") return;
 			if (!draggedNode.current) {
 				const isLabel = Boolean(this.label?.includes("label["));
