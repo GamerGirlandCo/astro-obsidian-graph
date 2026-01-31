@@ -280,7 +280,7 @@ export function usePointerUp({
 			setHoveredNode(null);
 			if (evt.button != 0 && evt.pointerType === "mouse") return;
 			if (draggedNode.current) {
-				simulation.alphaTarget(0);
+				simulation.alphaTarget(0).restart();
 				dragging.current = false;
 				setDown(false);
 				if (shouldChangeForce) {
@@ -338,11 +338,11 @@ export function usePointerDown({
 						);
 					}
 				}
-				simulation.alphaTarget(1).restart();
 				if (!oref) {
 					node.fx = node.x! - offset.x;
 					node.fy = node.y! - offset.y;
 				}
+				simulation.alphaTarget(1).restart();
 
 				setDown(true);
 				dragging.current = true;
