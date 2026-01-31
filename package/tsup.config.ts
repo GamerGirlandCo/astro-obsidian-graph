@@ -12,15 +12,15 @@ export default defineConfig((options) => {
 		".js": "jsx",
 	};
 	return {
-		entry: ["src/**/*.(ts|js|tsx|jsx)"],
+		entry: ["src/**/index.(ts|js|tsx|jsx)", "src/endpoints/**/*.(ts|js|tsx|jsx)"],
 		loader,
 		format: ["esm"],
 		target: "node18",
 		treeshake: true,
 		bundle: true,
 		dts: true,
-		sourcemap: true,
-		clean: false,
+		sourcemap: dev,
+		clean: !dev,
 		splitting: false,
 		minify: !dev,
 		external: [
