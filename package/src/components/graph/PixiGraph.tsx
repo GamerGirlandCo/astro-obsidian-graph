@@ -257,7 +257,7 @@ const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
 			onWheel={(e) => e.preventDefault()}
 		>
 			<Application
-				height={300}
+				height={props.height ?? 300}
 				antialias
 				backgroundAlpha={0}
 				autoStart

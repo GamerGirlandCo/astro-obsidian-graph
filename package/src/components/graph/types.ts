@@ -40,8 +40,11 @@ export interface Props {
 	labels: {
 		borderWidth: number;
 		padding: number;
-		borderStyle: CSSProperties["borderStyle"]
+		borderStyle: CSSProperties["borderStyle"];
+		fontFamily?: string;
+		fontSize?: string;
 	};
+	height?: number
 }
 
 export interface LabelProps {

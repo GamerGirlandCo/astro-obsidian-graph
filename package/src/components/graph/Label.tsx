@@ -11,7 +11,15 @@ import React, {
 	type Dispatch,
 	type SetStateAction,
 } from "react";
-import { Graphics, Container, Text, Rectangle, Point } from "pixi.js";
+import {
+	Graphics,
+	Container,
+	Text,
+	Rectangle,
+	Point,
+	CanvasTextMetrics,
+	TextStyle,
+} from "pixi.js";
 import gsap from "gsap";
 import type { GraphNode } from "./types";
 import { angleBetweenPoints } from "./utils";
@@ -53,15 +61,28 @@ export const NodeLabel = forwardRef(function (
 	const tref = useRef<Text>(null);
 	const cref = useRef<Container>(null);
 
+	const textStyle: TextStyle = useMemo(
+		() =>
+			new TextStyle({
+				align: "center",
+				fontSize: labels.fontSize ?? "14pt",
+				fill: colors.label ?? "#000",
+				fontFamily: labels.fontFamily ?? "sans-serif",
+			}),
+		[colors.label, labels.fontFamily, labels.fontSize]
+	);
+
+	const { width: textWidth, height: textHeight } = useMemo(() => {
+		return CanvasTextMetrics.measureText(node.title, textStyle);
+	}, [node.title, textStyle]);
+
 	const bgWidth = useMemo(() => {
-		const width = tref.current ? tref.current.width : 0;
-		return width + labels.padding * 2;
-	}, [tref.current?.width, labels.padding]);
+		return textWidth + labels.padding * 2;
+	}, [textWidth, labels.padding]);
 	const bgHeight = useMemo(() => {
-		const height = tref.current ? tref.current.height : 0;
-		return height + labels.padding * 2;
-	}, [tref.current?.height, labels.padding]);
-	const additionalY = useNodeRadius(node, links);	
+		return textHeight + labels.padding * 2;
+	}, [textHeight, labels.padding]);
+	const additionalY = useNodeRadius(node, links);
 
 	const move = useMove({
 		node,
@@ -185,11 +206,7 @@ export const NodeLabel = forwardRef(function (
 					x={labels.padding}
 					y={labels.padding}
 					text={node.title}
-					style={{
-						align: "center",
-						fontSize: "14pt",
-						fill: colors.label ?? "#000",
-					}}
+					style={textStyle}
 				/>
 			</pixiContainer>
 		),
