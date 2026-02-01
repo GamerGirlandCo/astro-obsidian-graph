@@ -166,19 +166,11 @@ export function parseIdsFromLinks(links: GraphLink[]): string[] {
 }
 
 export function hexToRgb(hex: string): [number, number, number] {
-	if (hex.startsWith("#")) hex = hex.substring(1);
-	var bigint = parseInt(hex, 16);
-	var r = (bigint >> 16) & 255;
-	var g = (bigint >> 8) & 255;
-	var b = bigint & 255;
-
-	return [r, g, b];
+	return chroma(hex).rgb();
 }
 
 export function rgbToHex(rgb: [number, number, number]) {
-	return rgb.reduce((pv, cv) => {
-		return `${pv}${Math.floor(cv).toString(16).padStart(2, "0")}`;
-	}, "#");
+	return chroma(rgb).hex();
 }
 
 export function useScuffed<T>(promise: Promise<T>) {
@@ -200,15 +192,7 @@ export function getMixedColor(
 }
 
 export function cssToRgb(css: string): [number, number, number, number] {
-	if (css.startsWith("#")) return [...hexToRgb(css), 1];
-	if (css === "none" || css === "") return [0, 0, 0, 0];
-	return css
-		.replace(
-			/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d*(?:\.?\d+)))?\)/,
-			"$1,$2,$3,$4"
-		)
-		.split(",")
-		.map((s) => s !== "" ? Number(s.trim()) : 1) as [number, number, number, number];
+	return chroma(css).rgba();
 }
 
 export function isNone(css: string): boolean {
