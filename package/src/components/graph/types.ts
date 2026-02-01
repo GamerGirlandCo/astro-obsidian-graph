@@ -40,7 +40,7 @@ export interface Props {
 	labels: {
 		borderWidth: number;
 		padding: number;
-		borderStyle: CSSProperties["borderStyle"];
+		borderStyle?: "dashed" | "dotted" | "solid";
 		fontFamily?: string;
 		fontSize?: string;
 	};

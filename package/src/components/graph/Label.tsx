@@ -20,6 +20,7 @@ import {
 	CanvasTextMetrics,
 	TextStyle,
 } from "pixi.js";
+import { DashLine } from "pixi-dashed-line";
 import gsap from "gsap";
 import type { GraphNode } from "./types";
 import { getPropertyValue } from "./utils";
@@ -32,6 +33,7 @@ import {
 	usePointerOver,
 	usePointerUp,
 } from "./hooks";
+import chroma from "chroma-js";
 
 export const NodeLabel = forwardRef(function (
 	{
@@ -56,10 +58,13 @@ export const NodeLabel = forwardRef(function (
 	const textRes = useMemo(() => Math.max(zoom ?? 1, 1), [zoom]);
 
 	const [down, setDown] = useState<boolean>(false);
-	const bgAlpha = useRef({ alpha: 0 });
+	const bgAlpha = useRef({
+		alpha: gctx.graphConfig.hideInactiveLabels ? 0 : 0.5,
+	});
 	const { colors, labels } = gctx;
 	const tref = useRef<Text>(null);
 	const cref = useRef<Container>(null);
+	const bref = useRef<Graphics>(null);
 
 	const textStyle: TextStyle = useMemo(
 		() =>
@@ -101,6 +106,18 @@ export const NodeLabel = forwardRef(function (
 		return chroma(getPropertyValue(colors.labelBg ?? "#ededed")).hex();
 	}, [colors.labelBg]);
 
+	const dashPattern = useMemo(() => {
+		switch (labels.borderStyle) {
+			case "dashed":
+				return [2, 5];
+			case "dotted":
+				return [0.5, 3];
+			case "solid":
+			default:
+				return undefined;
+		}
+	}, [labels.borderStyle]);
+
 	const bgDraw = useCallback(
 		(g: Graphics) => {
 			boundPointerUp.current = pointerUp.bind(g);
@@ -123,6 +140,17 @@ export const NodeLabel = forwardRef(function (
 				})
 					.roundRect(0, 0, bgWidth, bgHeight, 3.75)
 					.fill();
+				if (
+					labels.borderWidth !== undefined &&
+					labels.borderWidth > 0 &&
+					!dashPattern
+				) {
+					g.stroke({
+						width: labels.borderWidth,
+						color: chroma(getPropertyValue(colors.labelBorder ?? "#000")).hex(),
+						pixelLine: false,
+					});
+				}
 			}
 
 			if (cref.current) {
@@ -135,16 +163,63 @@ export const NodeLabel = forwardRef(function (
 			tref.current,
 			node,
 			hover,
-			// node.x, node.y,
+			dashPattern,
+			zoom,
 			pointerLeave,
 			pointerDown,
 			pointerOver,
 			pointerUp,
 			bgWidth,
 			bgHeight,
+			labels.borderWidth,
 			bgAlpha,
 			bgAlpha.current,
 			bgAlpha.current.alpha,
+		]
+	);
+
+	const borderDraw = useCallback(
+		(g: Graphics) => {
+			if (dashPattern) {
+				const asNumber = chroma(getPropertyValue(colors.labelBorder ?? "#000"))
+					.alpha(1)
+					.hex();
+				const dash = new DashLine(g, {
+					dash: dashPattern,
+					width: labels.borderWidth,
+					useTexture: false,
+					scale: 1,
+					join: "round",
+					cap: "round",
+					alpha: 1,
+					color: parseInt(
+						"0x" +
+							chroma(getPropertyValue(colors.labelBorder ?? "#000000"))
+								.hex("rgb")
+								.slice(1),
+						16
+					),
+				});
+				dash.setStrokeStyle();
+				// dash.setStrokeStyle();
+				dash.roundRect(
+					0,
+					0,
+					bgWidth,
+					bgHeight,
+					3.75
+					//3.75
+				);
+			}
+		},
+		[
+			dashPattern,
+			labels.borderWidth,
+			bgWidth,
+			bgHeight,
+			colors.labelBorder,
+			tref.current,
+			// bgDraw,
 		]
 	);
 
@@ -183,6 +258,12 @@ export const NodeLabel = forwardRef(function (
 			height: bgHeight,
 		});
 	}, [bgWidth, bgHeight]);
+
+	useEffect(() => {
+		if(bref.current) {
+			// borderDraw(bref.current);
+		}
+	}, [bref.current, node.x, node.y, borderDraw])
 	// if(node.hover)
 	// console.log(`{ id=${node.id}, offset=${yOffset} }`)
 	return useMemo(
@@ -202,6 +283,11 @@ export const NodeLabel = forwardRef(function (
 					eventMode="static"
 					hitArea={ha}
 					label={`label[${node.id}]`}
+				></pixiGraphics>
+				<pixiGraphics
+					draw={borderDraw}
+					eventMode="none"
+					label={`label.border[${node.id}]`}
 				></pixiGraphics>
 				<pixiText
 					resolution={textRes}
@@ -228,6 +314,7 @@ export const NodeLabel = forwardRef(function (
 			node.labelProps?.x,
 			node.labelProps?.y,
 			currentNode.current,
+			borderDraw,
 		]
 	);
 });

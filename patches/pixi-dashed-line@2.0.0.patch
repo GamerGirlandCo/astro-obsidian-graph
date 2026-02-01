@@ -1,0 +1,420 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 6541b3146f16e96de836b3d69f5f314183f92f6f..c0b912e162e74908971d0ef59bde37a321bc4812 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -1,7 +1,7 @@
+-import * as PIXI from 'pixi.js';
++import * as PIXI from "pixi.js";
+ /** Define the dash: [dash length, gap size, dash size, gap size, ...] */
+-export declare type Dashes = number[];
+-export interface DashLineOptions {
++export type Dashes = number[];
++export type DashLineOptions = {
+     dash?: Dashes;
+     width?: number;
+     color?: number;
+@@ -9,10 +9,10 @@ export interface DashLineOptions {
+     scale?: number;
+     useTexture?: boolean;
+     useDots?: boolean;
+-    cap?: PIXI.LINE_CAP;
+-    join?: PIXI.LINE_JOIN;
++    cap?: "butt" | "round" | "square";
++    join?: "bevel" | "miter" | "round";
+     alignment?: number;
+-}
++};
+ export declare class DashLine {
+     graphics: PIXI.Graphics;
+     /** current length of the line */
+@@ -43,15 +43,17 @@ export declare class DashLine {
+      */
+     constructor(graphics: PIXI.Graphics, options?: DashLineOptions);
+     /** resets line style to enable dashed line (useful if lineStyle was changed on graphics element) */
+-    setLineStyle(): void;
++    setStrokeStyle(): void;
+     private static distance;
+     moveTo(x: number, y: number): this;
+     lineTo(x: number, y: number, closePath?: boolean): this;
+     closePath(): void;
+-    drawCircle(x: number, y: number, radius: number, points?: number, matrix?: PIXI.Matrix): this;
+-    drawEllipse(x: number, y: number, radiusX: number, radiusY: number, points?: number, matrix?: PIXI.Matrix): this;
+-    drawPolygon(points: PIXI.Point[] | number[], matrix?: PIXI.Matrix): this;
+-    drawRect(x: number, y: number, width: number, height: number, matrix?: PIXI.Matrix): this;
+-    private adjustLineStyle;
++    circle(x: number, y: number, radius: number, points?: number, matrix?: PIXI.Matrix): this;
++    ellipse(x: number, y: number, radiusX: number, radiusY: number, points?: number, matrix?: PIXI.Matrix): this;
++    poly(points: PIXI.Point[] | number[], matrix?: PIXI.Matrix): this;
++    rect(x: number, y: number, width: number, height: number, matrix?: PIXI.Matrix): this;
++    roundRect(x: number, y: number, width: number, height: number, cornerRadius?: number, matrix?: PIXI.Matrix): this;
++    private drawDashedArc;
++    private adjustStrokeStyle;
+     private static getTexture;
+ }
+diff --git a/dist/index.js b/dist/index.js
+index 39cbd9afc05ee07e657fdfb023b2bcbfffbc16cf..90f157ba01f7e56c8012473727e21231a8eba9a0 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -10,9 +10,20 @@ var __assign = (this && this.__assign) || function () {
+     };
+     return __assign.apply(this, arguments);
+ };
+-exports.__esModule = true;
++Object.defineProperty(exports, "__esModule", { value: true });
+ exports.DashLine = void 0;
+ var PIXI = require("pixi.js");
++function getPointOnArc(cx, cy, radius, angle, matrix) {
++    var radian = (angle * Math.PI) / 180;
++    var x = cx + Math.cos(radian) * radius;
++    var y = cy + Math.sin(radian) * radius;
++    if (matrix) {
++        var p = new PIXI.Point(x, y);
++        matrix.apply(p, p);
++        return { x: p.x, y: p.y };
++    }
++    return { x: x, y: y };
++}
+ var dashLineOptionsDefault = {
+     dash: [10, 5],
+     width: 1,
+@@ -20,7 +31,7 @@ var dashLineOptionsDefault = {
+     alpha: 1,
+     scale: 1,
+     useTexture: false,
+-    alignment: 0.5
++    alignment: 0.5,
+ };
+ var DashLine = /** @class */ (function () {
+     /**
+@@ -38,40 +49,45 @@ var DashLine = /** @class */ (function () {
+      */
+     function DashLine(graphics, options) {
+         if (options === void 0) { options = {}; }
++        /** current length of the line */
++        this.lineLength = 0;
+         /** cursor location */
+         this.cursor = new PIXI.Point();
+         /** desired scale of line */
+         this.scale = 1;
++        // sanity check to ensure the lineStyle is still in use
++        this.activeTexture = undefined;
++        this.start = new PIXI.Point(0, 0);
+         this.graphics = graphics;
+-        options = __assign(__assign({}, dashLineOptionsDefault), options);
+-        this.dash = options.dash;
++        var mergedOpts = __assign(__assign({}, dashLineOptionsDefault), options);
++        this.dash = mergedOpts.dash;
+         this.dashSize = this.dash.reduce(function (a, b) { return a + b; });
+-        this.useTexture = options.useTexture;
+-        this.options = options;
+-        this.setLineStyle();
++        this.useTexture = Boolean(mergedOpts.useTexture);
++        this.options = mergedOpts;
++        this.setStrokeStyle();
+     }
+     /** resets line style to enable dashed line (useful if lineStyle was changed on graphics element) */
+-    DashLine.prototype.setLineStyle = function () {
++    DashLine.prototype.setStrokeStyle = function () {
+         var options = this.options;
+         if (this.useTexture) {
+             var texture = DashLine.getTexture(options, this.dashSize);
+-            this.graphics.lineTextureStyle({
++            this.graphics.stroke({
+                 width: options.width * options.scale,
+                 color: options.color,
+                 alpha: options.alpha,
+                 texture: texture,
+-                alignment: options.alignment
++                alignment: options.alignment,
+             });
+             this.activeTexture = texture;
+         }
+         else {
+-            this.graphics.lineStyle({
++            this.graphics.stroke({
+                 width: options.width * options.scale,
+                 color: options.color,
+                 alpha: options.alpha,
+                 cap: options.cap,
+                 join: options.join,
+-                alignment: options.alignment
++                alignment: options.alignment,
+             });
+         }
+         this.scale = options.scale;
+@@ -87,7 +103,7 @@ var DashLine = /** @class */ (function () {
+         return this;
+     };
+     DashLine.prototype.lineTo = function (x, y, closePath) {
+-        if (typeof this.lineLength === undefined) {
++        if (this.lineLength === undefined) {
+             this.moveTo(0, 0);
+         }
+         var length = DashLine.distance(this.cursor.x, this.cursor.y, x, y);
+@@ -95,7 +111,7 @@ var DashLine = /** @class */ (function () {
+         var closed = closePath && x === this.start.x && y === this.start.y;
+         if (this.useTexture) {
+             this.graphics.moveTo(this.cursor.x, this.cursor.y);
+-            this.adjustLineStyle(angle);
++            this.adjustStrokeStyle(angle);
+             if (closed && this.dash.length % 2 === 0) {
+                 var gap = Math.min(this.dash[this.dash.length - 1], length);
+                 this.graphics.lineTo(x - Math.cos(angle) * gap, y - Math.sin(angle) * gap);
+@@ -112,7 +128,8 @@ var DashLine = /** @class */ (function () {
+             var y0 = this.cursor.y;
+             // find the first part of the dash for this line
+             var place = this.lineLength % (this.dashSize * this.scale);
+-            var dashIndex = 0, dashStart = 0;
++            var dashIndex = 0;
++            var dashStart = 0;
+             var dashX = 0;
+             for (var i = 0; i < this.dash.length; i++) {
+                 var dashSize = this.dash[i] * this.scale;
+@@ -127,14 +144,16 @@ var DashLine = /** @class */ (function () {
+             }
+             var remaining = length;
+             // let count = 0
+-            while (remaining > 0) { // && count++ < 1000) {
++            while (remaining > 0) {
++                // && count++ < 1000) {
+                 var dashSize = this.dash[dashIndex] * this.scale - dashStart;
+                 var dist = remaining > dashSize ? dashSize : remaining;
+                 if (closed) {
+                     var remainingDistance = DashLine.distance(x0 + cos * dist, y0 + sin * dist, this.start.x, this.start.y);
+                     if (remainingDistance <= dist) {
+                         if (dashIndex % 2 === 0) {
+-                            var lastDash = DashLine.distance(x0, y0, this.start.x, this.start.y) - this.dash[this.dash.length - 1] * this.scale;
++                            var lastDash = DashLine.distance(x0, y0, this.start.x, this.start.y) -
++                                this.dash[this.dash.length - 1] * this.scale;
+                             x0 += cos * lastDash;
+                             y0 += sin * lastDash;
+                             this.graphics.lineTo(x0, y0);
+@@ -164,14 +183,15 @@ var DashLine = /** @class */ (function () {
+     DashLine.prototype.closePath = function () {
+         this.lineTo(this.start.x, this.start.y, true);
+     };
+-    DashLine.prototype.drawCircle = function (x, y, radius, points, matrix) {
++    DashLine.prototype.circle = function (x, y, radius, points, matrix) {
+         if (points === void 0) { points = 80; }
+-        var interval = Math.PI * 2 / points;
+-        var angle = 0, first;
++        var interval = (Math.PI * 2) / points;
++        var angle = 0;
++        var first;
+         if (matrix) {
+             first = new PIXI.Point(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+             matrix.apply(first, first);
+-            this.moveTo(first[0], first[1]);
++            this.moveTo(first.x, first.y);
+         }
+         else {
+             first = new PIXI.Point(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+@@ -179,18 +199,22 @@ var DashLine = /** @class */ (function () {
+         }
+         angle += interval;
+         for (var i = 1; i < points + 1; i++) {
+-            var next = i === points ? first : [x + Math.cos(angle) * radius, y + Math.sin(angle) * radius];
+-            this.lineTo(next[0], next[1]);
++            var next = i === points
++                ? first
++                : {
++                    x: x + Math.cos(angle) * radius,
++                    y: y + Math.sin(angle) * radius,
++                };
++            this.lineTo(next.x, next.y);
+             angle += interval;
+         }
+         return this;
+     };
+-    DashLine.prototype.drawEllipse = function (x, y, radiusX, radiusY, points, matrix) {
++    DashLine.prototype.ellipse = function (x, y, radiusX, radiusY, points, matrix) {
+         if (points === void 0) { points = 80; }
+-        var interval = Math.PI * 2 / points;
+-        var first;
++        var interval = (Math.PI * 2) / points;
++        var first = { x: 0, y: 0 };
+         var point = new PIXI.Point();
+-        var f = 0;
+         for (var i = 0; i < Math.PI * 2; i += interval) {
+             var x0 = x - radiusX * Math.sin(i);
+             var y0 = y - radiusY * Math.cos(i);
+@@ -211,9 +235,9 @@ var DashLine = /** @class */ (function () {
+         this.lineTo(first.x, first.y, true);
+         return this;
+     };
+-    DashLine.prototype.drawPolygon = function (points, matrix) {
++    DashLine.prototype.poly = function (points, matrix) {
+         var p = new PIXI.Point();
+-        if (typeof points[0] === 'number') {
++        if (typeof points[0] === "number") {
+             if (matrix) {
+                 p.set(points[0], points[1]);
+                 matrix.apply(p, p);
+@@ -231,31 +255,29 @@ var DashLine = /** @class */ (function () {
+                 }
+             }
+         }
+-        else {
+-            if (matrix) {
+-                var point = points[0];
+-                p.copyFrom(point);
++        else if (matrix) {
++            var point = points[0];
++            p.copyFrom(point);
++            matrix.apply(p, p);
++            this.moveTo(p.x, p.y);
++            for (var i = 1; i < points.length; i++) {
++                var point_1 = points[i];
++                p.copyFrom(point_1);
+                 matrix.apply(p, p);
+-                this.moveTo(p.x, p.y);
+-                for (var i = 1; i < points.length; i++) {
+-                    var point_1 = points[i];
+-                    p.copyFrom(point_1);
+-                    matrix.apply(p, p);
+-                    this.lineTo(p.x, p.y, i === points.length - 1);
+-                }
++                this.lineTo(p.x, p.y, i === points.length - 1);
+             }
+-            else {
+-                var point = points[0];
+-                this.moveTo(point.x, point.y);
+-                for (var i = 1; i < points.length; i++) {
+-                    var point_2 = points[i];
+-                    this.lineTo(point_2.x, point_2.y, i === points.length - 1);
+-                }
++        }
++        else {
++            var point = points[0];
++            this.moveTo(point.x, point.y);
++            for (var i = 1; i < points.length; i++) {
++                var point_2 = points[i];
++                this.lineTo(point_2.x, point_2.y, i === points.length - 1);
+             }
+         }
+         return this;
+     };
+-    DashLine.prototype.drawRect = function (x, y, width, height, matrix) {
++    DashLine.prototype.rect = function (x, y, width, height, matrix) {
+         if (matrix) {
+             var p = new PIXI.Point();
+             // moveTo(x, y)
+@@ -288,18 +310,65 @@ var DashLine = /** @class */ (function () {
+         }
+         return this;
+     };
++    DashLine.prototype.roundRect = function (x, y, width, height, cornerRadius, matrix) {
++        if (cornerRadius === void 0) { cornerRadius = 10; }
++        var minSize = Math.min(width, height);
++        cornerRadius = Math.min(cornerRadius, minSize / 2); // Ensure radius is valid
++        var p = new PIXI.Point();
++        // Helper function to move points using matrix
++        var transformPoint = function (px, py) {
++            if (matrix) {
++                p.set(px, py);
++                matrix.apply(p, p);
++                return { x: p.x, y: p.y };
++            }
++            return { x: px, y: py };
++        };
++        // Start at the top-left corner, moving to the first point
++        var start = transformPoint(x + cornerRadius, y);
++        this.moveTo(start.x, start.y);
++        // Top edge
++        var end = transformPoint(x + width - cornerRadius, y);
++        this.lineTo(end.x, end.y);
++        this.drawDashedArc(x + width - cornerRadius, y + cornerRadius, cornerRadius, -90, 0, matrix);
++        // Right edge
++        end = transformPoint(x + width, y + height - cornerRadius);
++        this.lineTo(end.x, end.y);
++        this.drawDashedArc(x + width - cornerRadius, y + height - cornerRadius, cornerRadius, 0, 90, matrix);
++        // Bottom edge
++        end = transformPoint(x + cornerRadius, y + height);
++        this.lineTo(end.x, end.y);
++        this.drawDashedArc(x + cornerRadius, y + height - cornerRadius, cornerRadius, 90, 180, matrix);
++        // Left edge
++        end = transformPoint(x, y + cornerRadius);
++        this.lineTo(end.x, end.y);
++        this.drawDashedArc(x + cornerRadius, y + cornerRadius, cornerRadius, 180, 270, matrix);
++        // Close path
++        this.lineTo(start.x, start.y, true);
++        return this;
++    };
++    DashLine.prototype.drawDashedArc = function (cx, cy, radius, startAngle, endAngle, matrix) {
++        var segments = 10; // Increase for smoother curves
++        var angleStep = (endAngle - startAngle) / segments;
++        for (var i = 1; i <= segments; i++) {
++            var nextPoint = getPointOnArc(cx, cy, radius, startAngle + i * angleStep, matrix);
++            this.lineTo(nextPoint.x, nextPoint.y);
++        }
++        return this;
++    };
+     // adjust the matrix for the dashed texture
+-    DashLine.prototype.adjustLineStyle = function (angle) {
+-        var lineStyle = this.graphics.line;
+-        lineStyle.matrix = new PIXI.Matrix();
++    DashLine.prototype.adjustStrokeStyle = function (angle) {
++        var strokeStyle = this.graphics.strokeStyle;
++        strokeStyle.matrix = new PIXI.Matrix();
+         if (angle) {
+-            lineStyle.matrix.rotate(angle);
++            strokeStyle.matrix.rotate(angle);
++        }
++        if (this.scale !== 1) {
++            strokeStyle.matrix.scale(this.scale, this.scale);
+         }
+-        if (this.scale !== 1)
+-            lineStyle.matrix.scale(this.scale, this.scale);
+         var textureStart = -this.lineLength;
+-        lineStyle.matrix.translate(this.cursor.x + textureStart * Math.cos(angle), this.cursor.y + textureStart * Math.sin(angle));
+-        this.graphics.lineStyle(lineStyle);
++        strokeStyle.matrix.translate(this.cursor.x + textureStart * Math.cos(angle), this.cursor.y + textureStart * Math.sin(angle));
++        this.graphics.stroke(strokeStyle);
+     };
+     // creates or uses cached texture
+     DashLine.getTexture = function (options, dashSize) {
+@@ -312,8 +381,8 @@ var DashLine = /** @class */ (function () {
+         canvas.height = Math.ceil(options.width);
+         var context = canvas.getContext("2d");
+         if (!context) {
+-            console.warn('Did not get context from canvas');
+-            return;
++            console.warn("Did not get context from canvas");
++            return undefined;
+         }
+         context.strokeStyle = "white";
+         context.globalAlpha = options.alpha;
+@@ -330,8 +399,9 @@ var DashLine = /** @class */ (function () {
+             }
+         }
+         context.stroke();
+-        var texture = DashLine.dashTextureCache[key] = PIXI.Texture.from(canvas);
+-        texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
++        var texture = (DashLine.dashTextureCache[key] =
++            PIXI.Texture.from(canvas));
++        texture.source.scaleMode = "nearest";
+         return texture;
+     };
+     // cache of PIXI.Textures for dashed lines
+diff --git a/dist/index.js.map b/dist/index.js.map
+index 232eb587d172b645260473ba920cee9680ce51b9..b10fe33e04b754d76174e62a3ca6385f6b7f154a 100644
+--- a/dist/index.js.map
++++ b/dist/index.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"index.js","sourceRoot":"","sources":["../lib/index.ts"],"names":[],"mappings":"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"}
+\ No newline at end of file
++{"version":3,"file":"index.js","sourceRoot":"","sources":["../lib/index.ts"],"names":[],"mappings":"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"}
+\ No newline at end of file
+diff --git a/package.json b/package.json
+index 9ad288b5fb7be2592ac0d5d9d5ff2a3d8769af84..a54db8a7bfee10dd5f05fe8137ee7679a0217442 100644
+--- a/package.json
++++ b/package.json
+@@ -41,5 +41,8 @@
+     "pixi-viewport": "^6.0.3",
+     "pixi.js": "^8.8.0",
+     "typescript": "^5.7.3"
++  },
++  "dependencies": {
++    "-": "^0.0.1"
+   }
+ }
