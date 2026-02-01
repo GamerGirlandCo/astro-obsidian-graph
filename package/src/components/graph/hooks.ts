@@ -18,16 +18,16 @@ import {
 import type { GraphNode, GraphLink, Props, GraphProps } from "./types";
 import { GRAPH_CONTEXT, INNER_GRAPH_CONTEXT } from "./context";
 import { forceAnchoredLabelCollide } from "./d3-extra";
-import { useTick } from "@pixi/react";
+import { getPropertyValue } from "./utils";
 
 export function useGraphColor(d: string, props: Omit<Props, "rootDir">) {
 	const pathColors = props.pathColors;
 	for (const col in pathColors) {
 		if (d.startsWith(col)) {
-			return pathColors[col]!.color;
+			return getPropertyValue(pathColors[col]!.color);
 		}
 	}
-	return props.colors!.nodeInactive!;
+	return getPropertyValue(props.colors!.nodeInactive!);
 }
 
 export const useNodeRadius = (d: GraphNode, links: GraphLink[]) => {

@@ -233,3 +233,10 @@ export function angleBetweenPoints(p1: Point, p2: Point, offset: number = 0) {
   
   return angleDeg;
 }
+
+export function getPropertyValue(maybeProperty: string): string {
+	if(maybeProperty.startsWith("--")) {
+		return getComputedStyle(document.documentElement).getPropertyValue(maybeProperty);
+	}
+	return maybeProperty;
+}

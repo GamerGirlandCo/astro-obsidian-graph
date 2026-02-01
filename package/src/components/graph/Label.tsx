@@ -22,7 +22,7 @@ import {
 } from "pixi.js";
 import gsap from "gsap";
 import type { GraphNode } from "./types";
-import { angleBetweenPoints } from "./utils";
+import { getPropertyValue } from "./utils";
 import { GRAPH_CONTEXT, INNER_GRAPH_CONTEXT } from "./context";
 import {
 	useMove,
@@ -97,6 +97,10 @@ export const NodeLabel = forwardRef(function (
 	const boundPointerUp = useRef<typeof pointerUp | null>(null);
 	const boundPointerDown = useRef<typeof pointerDown | null>(null);
 
+	const labelBg = useMemo(() => {
+		return chroma(getPropertyValue(colors.labelBg ?? "#ededed")).hex();
+	}, [colors.labelBg]);
+
 	const bgDraw = useCallback(
 		(g: Graphics) => {
 			boundPointerUp.current = pointerUp.bind(g);
@@ -112,11 +116,11 @@ export const NodeLabel = forwardRef(function (
 				.on("pointerover", pointerOver.bind(g));
 			if (tref.current) {
 				// console.log(`w=${bgWidth}; h=${bgHeight}`)
-				g.clear()
-					.setFillStyle({
-						color: colors.labelBg ?? "#ededed",
-						// alpha: bgAlpha.current.alpha
-					})
+				g.clear();
+				g.setFillStyle({
+					color: labelBg,
+					// alpha: bgAlpha.current.alpha
+				})
 					.roundRect(0, 0, bgWidth, bgHeight, 3.75)
 					.fill();
 			}
