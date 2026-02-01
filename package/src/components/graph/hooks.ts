@@ -1,6 +1,5 @@
 import * as d3 from "d3";
 import { flushSync } from "react-dom";
-import type { RefObject } from "react";
 import {
 	useContext,
 	useCallback,
@@ -8,13 +7,14 @@ import {
 	useMemo,
 	useEffect,
 	useRef,
+	type RefObject
 } from "react";
 import {
-	Container,
 	Graphics,
 	type FederatedPointerEvent,
 	Point,
 } from "pixi.js";
+import { useTick } from "@pixi/react";
 import type { GraphNode, GraphLink, Props, GraphProps } from "./types";
 import { GRAPH_CONTEXT, INNER_GRAPH_CONTEXT } from "./context";
 import { forceAnchoredLabelCollide } from "./d3-extra";
