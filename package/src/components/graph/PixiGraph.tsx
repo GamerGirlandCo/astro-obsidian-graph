@@ -34,7 +34,7 @@ import {
 	INNER_GRAPH_CONTEXT,
 	type GraphContext,
 } from "./context";
-import { useSimulation } from "./hooks";
+import { useResizeObserver, useSimulation } from "./hooks";
 import { PixiGraphNode } from "./Node";
 import { PixiGraphLink } from "./Link";
 
@@ -245,6 +245,7 @@ const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
 	useEffect(() => {
 		return () => linkGraphics.destroy();
 	}, []);
+	const { width } = useResizeObserver(divRef.current);
 	if (typeof window === "undefined") {
 		return <progress value={null as unknown as number} />;
 	}
@@ -258,10 +259,10 @@ const OuterPixiGraph = memo(function (props: Props & AstroBuiltinAttributes) {
 		>
 			<Application
 				height={props.height ?? 300}
+				width={width}
 				antialias
 				backgroundAlpha={0}
 				autoStart
-				resizeTo={divRef!}
 			>
 				<GRAPH_CONTEXT.Provider value={context}>
 					<InnerPixiGraph {...context} />

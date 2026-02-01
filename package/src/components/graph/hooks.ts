@@ -167,6 +167,24 @@ export function useSimulation({
 	return [simulation.current!, tick, requestTick];
 }
 
+export function useResizeObserver(el: HTMLElement | null): {width: number, height: number} {
+	const resizeObserver = useRef<ResizeObserver | null>(null);
+	const [size, setSize] = useState<{width: number, height: number}>({width: 0, height: 0});
+	useEffect(() => {
+		if (!el) return;
+		resizeObserver.current = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				setSize({width: entry.contentRect.width, height: entry.contentRect.height});
+			}
+		});
+		resizeObserver.current.observe(el);
+		return () =>{
+		resizeObserver.current?.disconnect();
+		resizeObserver.current = null;
+		} 
+	}, [el, setSize]);
+	return size;
+}
 export function usePointerLeave({
 	node,
 	setHover,
