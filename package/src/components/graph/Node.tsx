@@ -3,7 +3,6 @@ import type { Simulation } from "d3";
 import {
 	Circle,
 	Container,
-	FederatedPointerEvent,
 	Graphics,
 	Point,
 } from "pixi.js";
@@ -16,10 +15,8 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { flushSync } from "react-dom";
 import gsap from "gsap";
 import {
-	GRAPH_CONTEXT,
 	INNER_GRAPH_CONTEXT,
 	type GraphContext,
 } from "./context";
@@ -34,7 +31,7 @@ import {
 } from "./hooks";
 import type { GraphLink, GraphNode } from "./types";
 import { NodeLabel } from "./Label";
-import { cssToRgb, getMixedColor, hexToRgb, isNone, rgbToHex } from "./utils";
+import { getInheritedBackgroundColor, getMixedColor, hexToRgb } from "./utils";
 
 export function PixiGraphNode({
 	node,
@@ -105,23 +102,7 @@ export function PixiGraphNode({
 		return node.isCurrent ? props.colors.activeNode ?? "#00e7e3" : useGraphColor(node.id, props);
 	}, [node.isCurrent, props.colors, node.id, props]);
 	const bgColor = useMemo(() => {
-		let style = getComputedStyle(props.container.current!);
-		let raw = style.backgroundColor;
-		if(isNone(raw)) {
-			raw = style.background;
-		}
-		if(isNone(raw)) {
-			raw = style.backgroundColor;
-		}
-		if(isNone(raw)) {
-			style = getComputedStyle(document.body);
-			raw = style.background;
-			if(isNone(raw)) {
-				raw = style.backgroundColor;
-			}	
-		}	
-		if(raw.startsWith("#")) return raw;
-		return rgbToHex(cssToRgb(raw).slice(0, 3) as [number, number, number]);
+		return getInheritedBackgroundColor(props.container.current ?? document.body);
 	}, [props.container.current]);
 
 	const dimmedColor = useMemo(() => {

@@ -199,6 +199,18 @@ export function isNone(css: string): boolean {
 	return css === "none" || css === "" || cssToRgb(css).slice(0, 3).every(a => a === 0);
 }
 
+export function getInheritedBackgroundColor(element: HTMLElement): string {
+	let style = getComputedStyle(element);
+	let raw = style.backgroundColor;
+	if(raw === "rgba(0, 0, 0, 0)" || raw === "transparent" || raw === "none" || !raw) {
+		raw = style.background;
+		if(element.parentElement) {
+			return getInheritedBackgroundColor(element.parentElement);
+		}
+	}
+	return raw;
+}
+
 export function angleBetweenPoints(p1: Point, p2: Point, offset: number = 0) {
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
