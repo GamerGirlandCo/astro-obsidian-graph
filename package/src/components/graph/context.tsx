@@ -1,7 +1,6 @@
 import type { AstroBuiltinAttributes } from "astro";
 import { createContext, type RefObject, type Dispatch, type SetStateAction } from "react";
-import type { Simulation } from "d3-force";
-import type { Quadtree } from "d3";
+import type { Quadtree, Simulation } from "d3";
 import { Graphics, Container } from "pixi.js";
 import type { GraphLink, GraphNode, Props, Rect } from "./types";
 import type { ViewportWrapper } from "components/ViewportShim";

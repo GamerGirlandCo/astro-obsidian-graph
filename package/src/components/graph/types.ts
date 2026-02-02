@@ -1,5 +1,4 @@
-import type { SimulationNodeDatum, SimulationLinkDatum } from "d3-force";
-import type { Sprite } from "pixi.js";
+import type { SimulationNodeDatum, SimulationLinkDatum } from "d3";
 import type { CSSProperties, ComponentProps } from "react";
 import type { Graphics } from "pixi.js";
 

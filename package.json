@@ -23,7 +23,6 @@
 		"patchedDependencies": {
 			"@portaljs/remark-wiki-link@1.2.0": "patches/@portaljs__remark-wiki-link@1.2.0.patch",
 			"ts-transformer-keys@0.4.4": "patches/ts-transformer-keys@0.4.4.patch",
-			"@d3fc/d3fc-label-layout": "patches/@d3fc__d3fc-label-layout.patch",
 			"pixi-dashed-line@2.0.0": "patches/pixi-dashed-line@2.0.0.patch"
 		}
 	},
