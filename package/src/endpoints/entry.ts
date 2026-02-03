@@ -42,10 +42,12 @@ export function getStaticPaths() {
 			}
 		);
 		for (let f of files) {
+			let slug = f.substring(0, f.lastIndexOf("."));
+			if(slug.endsWith("index")) slug = slug.substring(0, slug.lastIndexOf("index"));
 			paths.push({
 				params: {
 					collection: c,
-					slug: f.substring(0, f.lastIndexOf(".")),
+					slug,
 				},
 			});
 		}
