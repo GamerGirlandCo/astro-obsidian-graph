@@ -12,7 +12,7 @@ export default defineConfig((options) => {
 		".js": "jsx",
 	};
 	return {
-		entry: ["src/**/index.(ts|js|tsx|jsx)", "src/endpoints/**/*.(ts|js|tsx|jsx)"],
+		entry: ["src/**/index.(ts|js|tsx|jsx)", "src/components/graph/types.ts", "src/endpoints/**/*.(ts|js|tsx|jsx)"],
 		loader,
 		format: ["esm"],
 		target: "node18",
