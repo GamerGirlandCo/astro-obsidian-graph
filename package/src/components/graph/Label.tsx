@@ -103,7 +103,7 @@ export const NodeLabel = forwardRef(function (
 	const boundPointerDown = useRef<typeof pointerDown | null>(null);
 
 	const labelBg = useMemo(() => {
-		return chroma(getPropertyValue(colors.labelBg ?? "#ededed")).hex();
+		return getPropertyValue(colors.labelBg ?? "#ededed");
 	}, [colors.labelBg]);
 
 	const dashPattern = useMemo(() => {
@@ -147,7 +147,7 @@ export const NodeLabel = forwardRef(function (
 				) {
 					g.stroke({
 						width: labels.borderWidth,
-						color: chroma(getPropertyValue(colors.labelBorder ?? "#000")).hex(),
+						color: getPropertyValue(colors.labelBorder ?? "#000"),
 						pixelLine: false,
 					});
 				}
@@ -180,10 +180,7 @@ export const NodeLabel = forwardRef(function (
 
 	const borderDraw = useCallback(
 		(g: Graphics) => {
-			if (dashPattern) {
-				const asNumber = chroma(getPropertyValue(colors.labelBorder ?? "#000"))
-					.alpha(1)
-					.hex();
+			if (dashPattern) {	
 				const dash = new DashLine(g, {
 					dash: dashPattern,
 					width: labels.borderWidth,
@@ -194,8 +191,7 @@ export const NodeLabel = forwardRef(function (
 					alpha: 1,
 					color: parseInt(
 						"0x" +
-							chroma(getPropertyValue(colors.labelBorder ?? "#000000"))
-								.hex("rgb")
+							getPropertyValue(colors.labelBorder ?? "#000000")
 								.slice(1),
 						16
 					),

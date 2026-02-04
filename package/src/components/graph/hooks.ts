@@ -25,10 +25,10 @@ export function useGraphColor(d: string, props: Omit<Props, "rootDir">) {
 	const pathColors = props.pathColors;
 	for (const col in pathColors) {
 		if (d.startsWith(col)) {
-			return chroma(getPropertyValue(pathColors[col]!.color)).hex();
+			return getPropertyValue(pathColors[col]!.color);
 		}
 	}
-	return chroma(getPropertyValue(props.colors!.nodeInactive!)).hex();
+	return getPropertyValue(props.colors!.nodeInactive!);
 }
 
 export const useNodeRadius = (d: GraphNode, links: GraphLink[]) => {

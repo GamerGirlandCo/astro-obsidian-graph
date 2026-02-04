@@ -261,7 +261,7 @@ export function getPropertyValue(maybeProperty: string): string {
 			color = getComputedStyle(tmpDiv).color;
 			document.body.removeChild(tmpDiv);
 		}
-		return color;
+		return chroma(color).hex();
 	}
 	return maybeProperty;
 }
