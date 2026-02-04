@@ -3,7 +3,7 @@ import { Graphics } from "pixi.js";
 import gsap from "gsap";
 import { GRAPH_CONTEXT, INNER_GRAPH_CONTEXT } from "./context";
 import type { GraphLink, ColorProps, GraphNode } from "./types";
-import { rgbToHex } from "./utils";
+import { getPropertyValue, rgbToHex } from "./utils";
 
 export const PixiGraphLink = forwardRef<
 	Graphics,
@@ -37,10 +37,10 @@ export const PixiGraphLink = forwardRef<
 	}, [draggedNode.current, source, target, graphConfig.dimOnDrag]);
 	const color = useMemo(() => {
 
-		return active ? colors.activeLink! : colors.linkInactive ?? "#ababab"
+		return getPropertyValue(active ? colors.activeLink! : colors.linkInactive ?? "#ababab")
 	}, [active, colors])
 	const oppositeColor = useMemo(() => {
-		return !active ? colors.activeLink! : colors.linkInactive ?? "#ababab"
+		return getPropertyValue(!active ? colors.activeLink! : colors.linkInactive ?? "#ababab")
 	}, [active, colors]);
 
 	const initialState = useRef({color})
