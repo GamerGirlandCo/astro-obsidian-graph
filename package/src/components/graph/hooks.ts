@@ -14,6 +14,7 @@ import {
 	type FederatedPointerEvent,
 	Point,
 } from "pixi.js";
+import chroma from "chroma-js";
 import { useTick } from "@pixi/react";
 import type { GraphNode, GraphLink, Props, GraphProps } from "./types";
 import { GRAPH_CONTEXT, INNER_GRAPH_CONTEXT } from "./context";
@@ -24,10 +25,10 @@ export function useGraphColor(d: string, props: Omit<Props, "rootDir">) {
 	const pathColors = props.pathColors;
 	for (const col in pathColors) {
 		if (d.startsWith(col)) {
-			return getPropertyValue(pathColors[col]!.color);
+			return chroma(getPropertyValue(pathColors[col]!.color)).hex();
 		}
 	}
-	return getPropertyValue(props.colors!.nodeInactive!);
+	return chroma(getPropertyValue(props.colors!.nodeInactive!)).hex();
 }
 
 export const useNodeRadius = (d: GraphNode, links: GraphLink[]) => {
