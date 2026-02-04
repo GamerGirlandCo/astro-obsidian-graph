@@ -126,9 +126,11 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 							.filter((a) => !workingSet.some((b) => b.id === a))
 							.map(async (a) => {
 								for (const c of kop) {
+									let slug = a.substring(1).substring(c.length).substring(1)
+									if(slug.endsWith("/")) slug = slug.substring(0, slug.lastIndexOf("/"));
 									const entry = await getEntry({
 										collection: c,
-										slug: a.substring(1).substring(c.length).substring(1),
+										slug,
 										signal
 									});
 									if (!!entry) return mapper(entry);
