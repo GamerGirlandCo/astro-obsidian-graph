@@ -61,9 +61,9 @@
 	"dependencies": {
 		"@astrojs/mdx": "4.2.0",
 		"@astrojs/react": "4.2.1",
+		"@flowershow/remark-wiki-link": "^3.3.1",
 		"@pixi/graphics-smooth": "^1.1.1",
 		"@pixi/react": "8.0.4",
-		"@portaljs/remark-wiki-link": "^1.2.0",
 		"@types/d3": "^7.4.3",
 		"@types/react": "19.2.6",
 		"astro-integration-kit": "^0.18.0",

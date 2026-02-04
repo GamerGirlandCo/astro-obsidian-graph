@@ -21,7 +21,6 @@
 	},
 	"pnpm": {
 		"patchedDependencies": {
-			"@portaljs/remark-wiki-link@1.2.0": "patches/@portaljs__remark-wiki-link@1.2.0.patch",
 			"ts-transformer-keys@0.4.4": "patches/ts-transformer-keys@0.4.4.patch",
 			"pixi-dashed-line@2.0.0": "patches/pixi-dashed-line@2.0.0.patch"
 		}
