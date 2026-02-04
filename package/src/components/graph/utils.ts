@@ -8,14 +8,16 @@ import type { GraphLink, GraphNode, Props } from "./types";
 async function getEntry({
 	slug,
 	collection,
-	signal
+	signal,
 }: {
-		slug: string;
-		collection: string;
-		signal: AbortSignal
+	slug: string;
+	collection: string;
+	signal: AbortSignal;
 }) {
 	try {
-		const raw = await fetch(`/api/entries/${collection}/${slug}.json`, {signal});
+		const raw = await fetch(`/api/entries/${collection}/${slug}.json`, {
+			signal,
+		});
 		const json = await raw.json();
 		return json;
 	} catch (e: any) {
@@ -29,12 +31,12 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 
 	useEffect(() => {
 		const controller = new AbortController();
-  	const signal = controller.signal;
+		const signal = controller.signal;
 		console.debug("EFFECT");
 		(async () => {
 			const { links: indexLinks, index } = (await (
-				await fetch("/api/links.json", {signal})
-				).json()) as FullLinkIndex;
+				await fetch("/api/links.json", { signal })
+			).json()) as FullLinkIndex;
 			// console.log(suburl(props.currentUrl), indexLinks, index);
 
 			let node = suburl(props.currentUrl);
@@ -54,7 +56,7 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 					const b = a;
 					let id = b.id.startsWith("/") ? b.id : `/${b.id}`;
 					let endIndex = id.lastIndexOf(".");
-					if(endIndex == -1) endIndex = id.length;
+					if (endIndex == -1) endIndex = id.length;
 					id = id.substring(0, endIndex);
 					if (id.endsWith("/")) id = id.substring(0, id.lastIndexOf("/"));
 					id = `/${b.collection}${id}`;
@@ -62,42 +64,42 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 						id,
 						title: b.data.title,
 						isCurrent:
-						id ===
-						(props.currentUrl.endsWith("/")
-							? props.currentUrl.substring(
-								0,
-								props.currentUrl.lastIndexOf("/")
-					  )
-							: props.currentUrl),
+							id ===
+							(props.currentUrl.endsWith("/")
+								? props.currentUrl.substring(
+										0,
+										props.currentUrl.lastIndexOf("/")
+								  )
+								: props.currentUrl),
 						color: useGraphColor(b.id, props),
 						collection: b.collection,
 						hover: false,
 					} as GraphNode;
 				};
 				const kop = (await (
-					await fetch("/api/collections.json", {signal})
-					).json()) as string[];
+					await fetch("/api/collections.json", { signal })
+				).json()) as string[];
 				let wtf = (
 					await Promise.all(
 						inter.flatMap(async (a) => {
 							let interArr = (
 								await Promise.all(
 									kop.flatMap(async (c) => {
-										if(!a.substring(1).startsWith(c)) return null;
+										if (!a.substring(1).startsWith(c)) return null;
 										let slug = a.substring(1).substring(c.length).substring(1);
 										const fin = await getEntry({
 											collection: c,
 											slug,
-											signal
+											signal,
 										});
 										return fin;
 									})
 								)
-								).filter((b) => !!b);
+							).filter((b) => !!b);
 							return await Promise.all(interArr.flatMap(mapper));
 						})
 					)
-					).flat(4);
+				).flat(4);
 				console.debug("wtf", wtf);
 				workingSet.push(...wtf);
 				console.debug("nodes", workingSet);
@@ -108,17 +110,17 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 				const ilinks = indexLinks
 					.filter(
 						(l) =>
-						workingSet.some((m) => m.id === l.source) ||
-						workingSet.some((m) => m.id === l.target)
+							workingSet.some((m) => m.id === l.source) ||
+							workingSet.some((m) => m.id === l.target)
 					)
 					.map((e, _, a) => ({
 						...e,
 						strength:
-						Math.log1p(
-							workingSet.filter((m) => m.id === e.source || m.id === e.target)
-								.length / a.length
-						) **
-						(Math.random() * 2),
+							Math.log1p(
+								workingSet.filter((m) => m.id === e.source || m.id === e.target)
+									.length / a.length
+							) **
+							(Math.random() * 2),
 					}));
 				let notIncluded = (
 					await Promise.all(
@@ -126,18 +128,19 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 							.filter((a) => !workingSet.some((b) => b.id === a))
 							.map(async (a) => {
 								for (const c of kop) {
-									let slug = a.substring(1).substring(c.length).substring(1)
-									if(slug.startsWith("/")) slug = slug.substring(1);
+									let slug = a.substring(1).substring(c.length).substring(1);
+									if (slug.startsWith("/")) slug = slug.substring(1);
 									const entry = await getEntry({
 										collection: c,
 										slug,
-										signal
+										signal,
 									});
 									if (!!entry) return mapper(entry);
 								}
 								return null;
 							})
-					)).filter((a) => !!a);
+					)
+				).filter((a) => !!a);
 				workingSet.push(...notIncluded);
 
 				setNodes(workingSet);
@@ -146,7 +149,7 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 		})();
 		return () => {
 			controller.abort();
-		}
+		};
 	}, [setNodes, setLinks, props]);
 	return [links, nodes];
 }
@@ -200,15 +203,26 @@ export function cssToRgb(css: string): [number, number, number, number] {
 }
 
 export function isNone(css: string): boolean {
-	return css === "none" || css === "" || cssToRgb(css).slice(0, 3).every(a => a === 0);
+	return (
+		css === "none" ||
+		css === "" ||
+		cssToRgb(css)
+			.slice(0, 3)
+			.every((a) => a === 0)
+	);
 }
 
 export function getInheritedBackgroundColor(element: HTMLElement): string {
 	let style = getComputedStyle(element);
 	let raw = style.backgroundColor;
-	if(raw === "rgba(0, 0, 0, 0)" || raw === "transparent" || raw === "none" || !raw) {
+	if (
+		raw === "rgba(0, 0, 0, 0)" ||
+		raw === "transparent" ||
+		raw === "none" ||
+		!raw
+	) {
 		raw = style.background;
-		if(element.parentElement) {
+		if (element.parentElement) {
 			return getInheritedBackgroundColor(element.parentElement);
 		}
 	}
@@ -216,22 +230,22 @@ export function getInheritedBackgroundColor(element: HTMLElement): string {
 }
 
 export function angleBetweenPoints(p1: Point, p2: Point, offset: number = 0) {
-  const dx = p1.x - p2.x;
-  const dy = p1.y - p2.y;
-  
-  let angleRad = Math.atan2(dy, dx);
-  
-  let angleDeg = angleRad * (180 / Math.PI);
-  
-  angleDeg = (-(90 - angleDeg)) % 360;
+	const dx = p1.x - p2.x;
+	const dy = p1.y - p2.y;
+
+	let angleRad = Math.atan2(dy, dx);
+
+	let angleDeg = angleRad * (180 / Math.PI);
+
+	angleDeg = -(90 - angleDeg) % 360;
 
 	angleDeg += offset;
-  
-  if (angleDeg < 0) {
-    angleDeg += 360;
-  }	
-  
-  return angleDeg;
+
+	if (angleDeg < 0) {
+		angleDeg += 360;
+	}
+
+	return angleDeg;
 }
 
 export function getPropertyValue(maybeProperty: string): string {
