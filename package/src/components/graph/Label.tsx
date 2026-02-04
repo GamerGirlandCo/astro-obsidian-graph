@@ -71,7 +71,7 @@ export const NodeLabel = forwardRef(function (
 			new TextStyle({
 				align: "center",
 				fontSize: labels.fontSize ?? "14pt",
-				fill: colors.label ?? "#000",
+				fill: getPropertyValue(colors.label ?? "#000"),
 				fontFamily: labels.fontFamily ?? "sans-serif",
 			}),
 		[colors.label, labels.fontFamily, labels.fontSize]

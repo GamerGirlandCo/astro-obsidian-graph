@@ -120,7 +120,7 @@ export function PixiGraphNode({
 		if (node.isCurrent) {
 			gi.stroke({
 				width: 3,
-				color: props.colors.nodeStroke!,
+				color: getPropertyValue(props.colors.nodeStroke!),
 			});
 		}
 	};
@@ -151,7 +151,7 @@ export function PixiGraphNode({
 			if (!node.isCurrent)
 				g.stroke({
 					width: strokeRef.current.width,
-					color: props.colors.nodeStroke!,
+					color: getPropertyValue(props.colors.nodeStroke!),
 					pixelLine: false,
 				});
 		},
