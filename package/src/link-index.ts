@@ -4,6 +4,7 @@ import react from "@astrojs/react";
 import type { LinkIndexConfig } from "./types";
 import mdx from "@astrojs/mdx";
 import remarkWikiLink from "@flowershow/remark-wiki-link";
+import { getAllFiles, getOptions } from "utils.js";
 export class LinkIndex implements AstroIntegration {
 	private static staticCfg: Partial<LinkIndexConfig> = {};
 	public readonly name: string = "link-graph-thing";
@@ -34,9 +35,7 @@ export class LinkIndex implements AstroIntegration {
 						remarkPlugins: [
 							[
 								remarkWikiLink,
-								{
-									format: "shortestPossible",
-								},
+								getOptions(getAllFiles(this.rootDir)),
 							],
 						],
 					},	
