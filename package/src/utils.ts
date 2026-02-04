@@ -1,23 +1,18 @@
 import {readFileSync} from "fs";
 import fg from "fast-glob";
 import { SUPPORTED_MARKDOWN_FILE_EXTENSIONS } from "@external/astro/dist/core/constants";
-import { permalinks } from "./permalinks";
 import type { LinkIndex } from "./types";
 import { unified } from "unified";
-import remarkWikiLink from "@portaljs/remark-wiki-link";
+import remarkWikiLink from "@flowershow/remark-wiki-link";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdx from "remark-mdx";
 import remarkParse from "remark-parse";
 import { visitParents } from "unist-util-visit-parents";
 import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
 const {globSync} = fg;
-export const buildIndex = (root: string): LinkIndex => {
-	const finalIndex: LinkIndex = {
-		backlinks: {},
-		links: {},
-	};
-	// console.log("BUILD INDEX ROOT", root)
-	const files = globSync(
+
+export const getAllFiles = (root: string): string[] => {
+	return globSync(
 		[
 			`**/*.{${SUPPORTED_MARKDOWN_FILE_EXTENSIONS.map((a) =>
 				a.substring(1)
@@ -33,7 +28,15 @@ export const buildIndex = (root: string): LinkIndex => {
 			followSymbolicLinks: true,
 			caseSensitiveMatch: false,
 		}
-	).map((a) => `/${a}`);
+	)
+}
+export const buildIndex = (root: string): LinkIndex => {
+	const finalIndex: LinkIndex = {
+		backlinks: {},
+		links: {},
+	};
+	// console.log("BUILD INDEX ROOT", root)
+	const files = getAllFiles(root).map((a) => `/${a}`);
 	console.log(files.filter(a => a.includes("random")).slice(0, 10))
 	for (let f of files) {
 		const rf = f.substring(0, f.lastIndexOf("."));
@@ -43,7 +46,7 @@ export const buildIndex = (root: string): LinkIndex => {
 			.use(remarkParse)
 			.use(remarkFrontmatter)
 			.use(remarkMdx)
-			.use(remarkWikiLink, { permalinks: permalinks(root), pathFormat: "obsidian-short" })
+			.use(remarkWikiLink, { files: getAllFiles(root), format: "shortestPossible" })
 			.parse(content);
 
 		visitParents(tree, "wikiLink", (node: any) => {

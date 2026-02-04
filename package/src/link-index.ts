@@ -3,8 +3,7 @@ import { createAstro } from "../node_modules/astro/dist/runtime/server/astro-glo
 import react from "@astrojs/react";
 import type { LinkIndexConfig } from "./types";
 import mdx from "@astrojs/mdx";
-import remarkWikiLink from "@portaljs/remark-wiki-link";
-import { permalinks } from "./permalinks";
+import remarkWikiLink from "@flowershow/remark-wiki-link";
 export class LinkIndex implements AstroIntegration {
 	private static staticCfg: Partial<LinkIndexConfig> = {};
 	public readonly name: string = "link-graph-thing";
@@ -36,8 +35,7 @@ export class LinkIndex implements AstroIntegration {
 							[
 								remarkWikiLink,
 								{
-									permalinks: permalinks(this.cfg.rootDir!),
-									pathFormat: "obsidian-short",
+									format: "shortestPossible",
 								},
 							],
 						],
