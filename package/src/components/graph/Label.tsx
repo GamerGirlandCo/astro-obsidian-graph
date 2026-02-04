@@ -20,7 +20,7 @@ import {
 	CanvasTextMetrics,
 	TextStyle,
 } from "pixi.js";
-import { DashLine } from "pixi-dashed-line";
+import { DashLine } from "@btfash/pixi-dashed-line";
 import gsap from "gsap";
 import type { GraphNode } from "./types";
 import { getPropertyValue } from "./utils";
