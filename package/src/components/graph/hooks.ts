@@ -211,7 +211,7 @@ export function usePointerLeave({
 				if (!node.isCurrent && setStroke)
 					this?.stroke({
 						width: 0,
-						color: colors.nodeStroke!,
+						color: getPropertyValue(colors.nodeStroke!),
 					});
 			} /*else {
 				move.bind(this)(evt);
