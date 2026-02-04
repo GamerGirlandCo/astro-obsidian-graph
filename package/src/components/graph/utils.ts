@@ -235,8 +235,19 @@ export function angleBetweenPoints(p1: Point, p2: Point, offset: number = 0) {
 }
 
 export function getPropertyValue(maybeProperty: string): string {
-	if(maybeProperty.startsWith("--")) {
-		return getComputedStyle(document.documentElement).getPropertyValue(maybeProperty);
+	if (maybeProperty.startsWith("--")) {
+		const value = getComputedStyle(document.documentElement).getPropertyValue(
+			maybeProperty
+		);
+		let color = value;
+		while (!chroma.valid(color)) {
+			const tmpDiv = document.createElement("div");
+			tmpDiv.style.color = value;
+			document.body.appendChild(tmpDiv);
+			color = getComputedStyle(tmpDiv).color;
+			document.body.removeChild(tmpDiv);
+		}
+		return color;
 	}
 	return maybeProperty;
 }
