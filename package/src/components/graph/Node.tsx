@@ -31,7 +31,7 @@ import {
 } from "./hooks";
 import type { GraphLink, GraphNode } from "./types";
 import { NodeLabel } from "./Label";
-import { getInheritedBackgroundColor, getMixedColor, hexToRgb } from "./utils";
+import { getInheritedBackgroundColor, getMixedColor, getPropertyValue, hexToRgb } from "./utils";
 
 export function PixiGraphNode({
 	node,
@@ -99,7 +99,7 @@ export function PixiGraphNode({
 	}, [draggedNode.current, node, neighborIds]);
 
 	const color = useMemo(() => {
-		return node.isCurrent ? props.colors.activeNode ?? "#00e7e3" : useGraphColor(node.id, props);
+		return node.isCurrent ? getPropertyValue(props.colors.activeNode ?? "#00e7e3") : useGraphColor(node.id, props);
 	}, [node.isCurrent, props.colors, node.id, props]);
 	const bgColor = useMemo(() => {
 		return getInheritedBackgroundColor(props.container.current ?? document.body);
