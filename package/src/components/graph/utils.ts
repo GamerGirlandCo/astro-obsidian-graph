@@ -53,7 +53,9 @@ export function useParsedLinks(props: Props): [GraphLink[], GraphNode[]] {
 				const mapper = async (a) => {
 					const b = a;
 					let id = b.id.startsWith("/") ? b.id : `/${b.id}`;
-					id = id.substring(0, id.lastIndexOf("."));
+					let endIndex = id.lastIndexOf(".");
+					if(endIndex == -1) endIndex = id.length;
+					id = id.substring(0, endIndex);
 					if (id.endsWith("/")) id = id.substring(0, id.lastIndexOf("/"));
 					id = `/${b.collection}${id}`;
 					return {
